@@ -1,0 +1,196 @@
+===========================================================
+VERTEX - EJEMPLOS DE PROGRAMACIÓN LINEAL
+===========================================================
+
+Todos los ejemplos utilizan la sintaxis aceptada por Vertex.
+
+Variables:
+x1, x2, x3...
+
+Operadores:
+<=
+>=
+=
+
+===========================================================
+1. MÉTODO GRÁFICO
+===========================================================
+
+Tipo:
+Max
+
+Función objetivo:
+
+18.5x1+20x2
+
+Restricciones:
+
+0.05x1+0.05x2<=1100
+0.05x1+0.1x2<=1800
+0.1x1+0.05x2<=2000
+
+Resultado esperado:
+
+x1 = 8000
+x2 = 14000
+Z = 428000
+
+-----------------------------------------------------------
+
+===========================================================
+2. MÉTODO SIMPLEX
+===========================================================
+
+Tipo:
+Max
+
+Función objetivo:
+
+3x1+5x2
+
+Restricciones:
+
+2x1+x2<=8
+x1+2x2<=8
+
+Resultado esperado:
+
+x1 = 2.666667
+x2 = 2.666667
+Z = 21.333333
+
+-----------------------------------------------------------
+
+===========================================================
+3. MÉTODO BIG M
+===========================================================
+
+Tipo:
+Min
+
+Función objetivo:
+
+x1+x2
+
+Restricciones:
+
+x1+x2>=4
+x1+2x2>=6
+
+Resultado esperado:
+
+x1 = 2
+x2 = 2
+Z = 4
+
+-----------------------------------------------------------
+
+===========================================================
+4. MÉTODO DUAL SIMPLEX
+===========================================================
+
+Tipo:
+Min
+
+Función objetivo:
+
+2x1+3x2
+
+Restricciones:
+
+x1+x2>=4
+2x1+x2>=5
+
+Resultado esperado:
+
+x1 = 1
+x2 = 3
+Z = 11
+
+-----------------------------------------------------------
+
+===========================================================
+5. MÉTODO NUMÉRICO
+(Enumeración de puntos extremos)
+===========================================================
+
+Tipo:
+Max
+
+Función objetivo:
+
+3x1+5x2
+
+Restricciones:
+
+2x1+x2<=8
+x1+2x2<=8
+
+Resultado esperado:
+
+x1 = 2.666667
+x2 = 2.666667
+Z = 21.333333
+
+-----------------------------------------------------------
+
+===========================================================
+6. MÉTODO HÚNGARO
+===========================================================
+
+Tipo:
+Min
+
+Función objetivo:
+
+7x11+9x12+3x13+6x21+4x22+8x23+5x31+2x32+1x33
+
+Restricciones:
+
+x11+x12+x13=1
+x21+x22+x23=1
+x31+x32+x33=1
+
+x11+x21+x31=1
+x12+x22+x32=1
+x13+x23+x33=1
+
+Resultado esperado:
+
+Trabajador 1 -> Máquina 3
+Trabajador 2 -> Máquina 1
+Trabajador 3 -> Máquina 2
+
+Costo mínimo = 11
+
+===========================================================
+NOTAS
+===========================================================
+
+• El método gráfico únicamente admite dos variables (x1 y x2).
+
+• Los demás métodos admiten cualquier cantidad de variables.
+
+• Los coeficientes pueden ser:
+    - Enteros
+    - Decimales
+    - Positivos
+    - Negativos
+
+Ejemplos válidos:
+
+x1+x2<=10
+-3x1+2.5x2>=8
+0.25x1+0.75x2<=120
+
+No es necesario escribir:
+
+1x1
+
+Puede escribirse simplemente:
+
+x1
+
+Vertex interpretará automáticamente el coeficiente 1.
+
+===========================================================
