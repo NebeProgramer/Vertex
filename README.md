@@ -1,6 +1,12 @@
+
+
 # Vertex — Solucionador de Programación Lineal
 
 Aplicación de escritorio en Java para modelar y resolver problemas de optimización lineal. Vertex permite escribir una función objetivo y sus restricciones, seleccionar un método de solución o dejar que la aplicación recomiende uno de acuerdo con la estructura del problema.
+
+<p align="center">
+  <img src="/vertex-icon.ico" alt="Logo de Vertex" width="180">
+</p>
 
 ## Descarga
 
@@ -10,7 +16,7 @@ No hace falta compilar nada para usar Vertex: solo necesitas tener **Java 17 o s
 
 También puedes buscar el `.zip` de cada versión en la sección [Releases](https://github.com/NebeProgramer/Vertex/releases) de este repositorio.
 
-1. Descarga y descomprime `Vertex.zip`.
+1. Descarga y descomprime `target.zip`.
 2. Ejecuta `Vertex.jar` con doble clic, o desde una terminal:
 
    ```bash
