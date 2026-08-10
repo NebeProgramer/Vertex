@@ -5,7 +5,7 @@
 Aplicación de escritorio en Java para modelar y resolver problemas de optimización lineal. Vertex permite escribir una función objetivo y sus restricciones, seleccionar un método de solución o dejar que la aplicación recomiende uno de acuerdo con la estructura del problema.
 
 <p align="center">
-  <img src="/vertex-icon.ico" alt="Logo de Vertex" width="180">
+  <img src="/src/main/resources/vertex-logo.png" alt="Logo de Vertex" width="180">
 </p>
 
 ## Descarga
