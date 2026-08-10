@@ -16,7 +16,7 @@ No hace falta compilar nada para usar Vertex: solo necesitas tener **Java 17 o s
 
 También puedes buscar el `.zip` de cada versión en la sección [Releases](https://github.com/NebeProgramer/Vertex/releases) de este repositorio.
 
-1. Descarga y descomprime `target.zip`.
+1. Descarga y descomprime `Vertex.zip`.
 2. Ejecuta `Vertex.jar` con doble clic, o desde una terminal:
 
    ```bash
