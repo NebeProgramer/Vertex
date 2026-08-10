@@ -63,6 +63,34 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
     public MetodoSimplex() {
         initComponents();
         Recursos.aplicarIcono(this);
+        instalarRendererColores(TablaTableau);
+    }
+
+    /**
+     * Pinta cada celda según auxMatActual: 1 = cambió respecto a la tabla
+     * anterior (verde), 2 = fila/columna pivote (amarillo), 3 = celda
+     * pivote exacta (naranja). Se recalcula en cada mostrarPaso(), así que
+     * nunca es acumulable entre pasos.
+     */
+    private void instalarRendererColores(JTable tabla) {
+        tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setHorizontalAlignment(CENTER);
+                Color fondo = Color.WHITE;
+                if (auxMatActual != null && row < auxMatActual.length && column < auxMatActual[row].length) {
+                    switch (auxMatActual[row][column]) {
+                        case 3: fondo = COLOR_PIVOTE_CELDA; break;
+                        case 2: fondo = COLOR_PIVOTE_LINEA; break;
+                        case 1: fondo = COLOR_CAMBIO; break;
+                        default: fondo = Color.WHITE;
+                    }
+                }
+                c.setBackground(fondo);
+                return c;
+            }
+        });
     }
 
     /**

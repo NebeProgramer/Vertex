@@ -73,6 +73,28 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
     public AlgoritmoDual() {
         initComponents();
         Recursos.aplicarIcono(this);
+        instalarRendererColores(TablaTableau);
+    }
+
+    private void instalarRendererColores(JTable tabla) {
+        tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setHorizontalAlignment(CENTER);
+                Color fondo = Color.WHITE;
+                if (auxMatActual != null && row < auxMatActual.length && column < auxMatActual[row].length) {
+                    switch (auxMatActual[row][column]) {
+                        case 3: fondo = COLOR_PIVOTE_CELDA; break;
+                        case 2: fondo = COLOR_PIVOTE_LINEA; break;
+                        case 1: fondo = COLOR_CAMBIO; break;
+                        default: fondo = Color.WHITE;
+                    }
+                }
+                c.setBackground(fondo);
+                return c;
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")

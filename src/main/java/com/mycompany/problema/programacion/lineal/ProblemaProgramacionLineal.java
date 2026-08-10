@@ -16,5 +16,7 @@ public class ProblemaProgramacionLineal {
         if (VentanaDonacion.debeMostrarse()) {
             new VentanaDonacion(pp).setVisible(true);
         }
+
+        ActualizacionChecker.verificar(pp);
     }
 }

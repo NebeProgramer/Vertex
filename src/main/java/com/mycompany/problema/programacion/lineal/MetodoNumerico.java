@@ -40,8 +40,8 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
     private String[] varNames;
     private int filaOptima = -1;
     private String resultadoTexto;
+    private int[] filaEstado; // por fila: 0 = infactible/singular (rojo), 1 = factible (verde), 2 = óptima (naranja)
 
-    
     @Override
     public void resolver(String FO, String[] R, String tipo) {
         calculos(FO, R, tipo);
@@ -55,6 +55,32 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
     public MetodoNumerico() {
         initComponents();
         Recursos.aplicarIcono(this);
+        instalarRendererColores(TablaSoluciones);
+    }
+
+    /**
+     * Colorea cada fila completa según filaEstado: verde si la solución
+     * básica es factible, naranja si además es la óptima, rojo si es
+     * infactible o el sistema salió singular.
+     */
+    private void instalarRendererColores(JTable tabla) {
+        tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setHorizontalAlignment(CENTER);
+                Color fondo = Color.WHITE;
+                if (filaEstado != null && row < filaEstado.length) {
+                    switch (filaEstado[row]) {
+                        case 2: fondo = COLOR_OPTIMO; break;
+                        case 1: fondo = COLOR_FACTIBLE; break;
+                        default: fondo = COLOR_INFACTIBLE;
+                    }
+                }
+                c.setBackground(fondo);
+                return c;
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -239,6 +265,7 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
         double mejorZ = esMin ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 
         Object[][] datos = new Object[combinaciones.size()][n + 3];
+        filaEstado = new int[combinaciones.size()];
         for (int fila = 0; fila < combinaciones.size(); fila++) {
             int[] basicas = combinaciones.get(fila);
             double[] solucion = new double[n];
@@ -286,6 +313,7 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
             }
             datos[fila][n + 1] = singular ? "Singular" : (factible ? "Sí" : "No");
             datos[fila][n + 2] = factible ? fmt(z) : "—";
+            filaEstado[fila] = factible ? 1 : 0;
 
             if (factible) {
                 boolean mejor = esMin ? (z < mejorZ - EPS) : (z > mejorZ + EPS);
@@ -297,6 +325,9 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
         }
 
         filaOptima = filaOptimaZ;
+        if (filaOptima != -1) {
+            filaEstado[filaOptima] = 2;
+        }
 
         String[] columnas = new String[n + 3];
         columnas[0] = "#";

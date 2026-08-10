@@ -27,8 +27,9 @@ import com.mycompany.problema.programacion.lineal.algoritmos.MetodoPL;
  */
 public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
 
-    private static final Color COLOR_LINEA = new Color(255, 255, 170);   // amarillo: fila/columna cubierta
-    private static final Color COLOR_ASIGNADO = new Color(180, 255, 180); // verde: celda asignada (cubierta 2 veces)
+    private static final Color COLOR_LINEA = new Color(255, 255, 170);   // amarillo: fila/columna cubierta por una línea
+    private static final Color COLOR_ASIGNADO = new Color(180, 255, 180); // verde: celda con valor 0
+    private static final Color COLOR_CAUSANTE = new Color(255, 176, 120); // naranja: número que se resta/suma esta iteración
 
     private int numInter = 1;
     private final List<double[][]> matricesPasos = new ArrayList<>();
@@ -52,6 +53,33 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
     public AlgoritmoHungaro() {
         initComponents();
         Recursos.aplicarIcono(this);
+        instalarRendererColores(TablaTableau);
+    }
+
+    /**
+     * Pinta cada celda según auxMatActual: 2 = valor 0 (verde), 1 = fila/
+     * columna cubierta por una línea (amarillo), 3 = número que se resta/
+     * suma en esta iteración (naranja, el "número causante").
+     */
+    private void instalarRendererColores(JTable tabla) {
+        tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setHorizontalAlignment(CENTER);
+                Color fondo = Color.WHITE;
+                if (auxMatActual != null && row < auxMatActual.length && column < auxMatActual[row].length) {
+                    switch (auxMatActual[row][column]) {
+                        case 3: fondo = COLOR_CAUSANTE; break;
+                        case 2: fondo = COLOR_ASIGNADO; break;
+                        case 1: fondo = COLOR_LINEA; break;
+                        default: fondo = Color.WHITE;
+                    }
+                }
+                c.setBackground(fondo);
+                return c;
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -334,12 +362,34 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
             }
             boolean[] colCubierta = colMarcada;
 
+            // aux: 0 normal, 1 = cubierta por una línea (amarillo), 2 = cero (verde)
             int[][] aux = new int[n][n];
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
-                    aux[i][j] = (filaCubierta[i] ? 1 : 0) + (colCubierta[j] ? 1 : 0);
+                    boolean cubierta = filaCubierta[i] || colCubierta[j];
+                    aux[i][j] = (Zmat[i][j] == 0) ? 2 : (cubierta ? 1 : 0);
                 }
             }
+
+            double menorNoCubierto = Double.MAX_VALUE;
+            int minI = -1, minJ = -1;
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    if (!filaCubierta[i] && !colCubierta[j] && Zmat[i][j] < menorNoCubierto) {
+                        menorNoCubierto = Zmat[i][j];
+                        minI = i;
+                        minJ = j;
+                    }
+                }
+            }
+            if (menorNoCubierto == Double.MAX_VALUE) {
+                menorNoCubierto = 0;
+            }
+            // 3 = número que se resta/suma esta iteración (naranja) — el "número causante"
+            if (asignados < n && minI != -1) {
+                aux[minI][minJ] = 3;
+            }
+
             matricesPasos.add(cloneMatrix(Zmat));
             nombresPasos.add("Tablero " + iteracion + " (líneas mínimas de cobertura, asignados " + asignados + "/" + n + ")");
             matricesAux.add(aux);
@@ -348,23 +398,16 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
                 return matchRow;
             }
 
-            double menorNoCubierto = Double.MAX_VALUE;
-            for (int i = 0; i < n; i++) {
-                for (int j = 0; j < n; j++) {
-                    if (!filaCubierta[i] && !colCubierta[j] && Zmat[i][j] < menorNoCubierto) {
-                        menorNoCubierto = Zmat[i][j];
-                    }
-                }
-            }
-            if (menorNoCubierto == Double.MAX_VALUE) {
-                menorNoCubierto = 0;
-            }
+            int[][] auxAjuste = new int[n][n];
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
                     if (!filaCubierta[i] && !colCubierta[j]) {
                         Zmat[i][j] -= menorNoCubierto;
                     } else if (filaCubierta[i] && colCubierta[j]) {
                         Zmat[i][j] += menorNoCubierto;
+                    }
+                    if (Zmat[i][j] == 0) {
+                        auxAjuste[i][j] = 2; // cero nuevo tras la resta/suma (verde)
                     }
                 }
             }
@@ -373,7 +416,7 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
             setInter(iteracion);
             matricesPasos.add(cloneMatrix(Zmat));
             nombresPasos.add("Ajuste de la iteración " + (iteracion - 1));
-            matricesAux.add(null);
+            matricesAux.add(auxAjuste);
         }
     }
 

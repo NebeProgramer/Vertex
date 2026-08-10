@@ -29,7 +29,7 @@ public class VentanaDonacion extends JDialog {
     // TODO(Anderson): reemplaza esta URL por tu página de donaciones
     // (Ko-fi, PayPal.me, Buy Me a Coffee...) o por tu sitio personal con
     // tu información como programador y el enlace de donación ahí.
-    private static final String URL_DONACION = "https://tu-pagina-de-donaciones-o-sitio-aqui.com";
+    private static final String URL_DONACION = "https://repositorio-aeop.onrender.com";
     private static final String PREF_POSPUESTA_HASTA = "donacion_pospuesta_hasta";
     private static final int DIAS_POSPONER = 15;
 

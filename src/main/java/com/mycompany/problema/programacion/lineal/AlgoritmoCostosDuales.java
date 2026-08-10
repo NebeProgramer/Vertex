@@ -72,6 +72,35 @@ public class AlgoritmoCostosDuales extends javax.swing.JFrame implements MetodoP
     public AlgoritmoCostosDuales() {
         initComponents();
         Recursos.aplicarIcono(this);
+        instalarRendererColores(TablaTransporte);
+    }
+
+    /**
+     * Pinta cada celda según auxMatActual: 1 = cambió respecto a la tabla
+     * anterior (verde), 2 = celda que entra a la base (naranja, el "número
+     * causante" del ciclo), 3 = celda del ciclo que suma theta (verde),
+     * 4 = celda del ciclo que resta theta (rojo).
+     */
+    private void instalarRendererColores(JTable tabla) {
+        tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setHorizontalAlignment(CENTER);
+                Color fondo = Color.WHITE;
+                if (auxMatActual != null && row < auxMatActual.length && column < auxMatActual[row].length) {
+                    switch (auxMatActual[row][column]) {
+                        case 2: fondo = COLOR_ENTRA; break;
+                        case 3: fondo = COLOR_MAS; break;
+                        case 4: fondo = COLOR_MENOS; break;
+                        case 1: fondo = COLOR_CAMBIO; break;
+                        default: fondo = Color.WHITE;
+                    }
+                }
+                c.setBackground(fondo);
+                return c;
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")

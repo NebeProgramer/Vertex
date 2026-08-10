@@ -2,6 +2,24 @@
 
 Aplicación de escritorio en Java para modelar y resolver problemas de optimización lineal. Vertex permite escribir una función objetivo y sus restricciones, seleccionar un método de solución o dejar que la aplicación recomiende uno de acuerdo con la estructura del problema.
 
+## Descarga
+
+No hace falta compilar nada para usar Vertex: solo necesitas tener **Java 17 o superior** instalado (JRE es suficiente).
+
+**[⬇ Descargar la última versión](https://repositorio-aeop.onrender.com/desktop/Vertex)**
+
+También puedes buscar el `.zip` de cada versión en la sección [Releases](https://github.com/NebeProgramer/Vertex/releases) de este repositorio.
+
+1. Descarga y descomprime `Vertex.zip`.
+2. Ejecuta `Vertex.jar` con doble clic, o desde una terminal:
+
+   ```bash
+   java -jar Vertex.jar
+   ```
+
+La aplicación revisa automáticamente al abrirse si hay una versión más nueva disponible y te avisa con un enlace de descarga.
+
+
 ## Funcionalidades
 
 - Optimización de problemas de **maximización** y **minimización**.
@@ -43,10 +61,12 @@ La única dependencia declarada es `org.netbeans.external:AbsoluteLayout:RELEASE
 
 ```bash
 mvn clean package
-java -jar target/Problema-Programacion-Lineal-1.0-SNAPSHOT-app.jar
+java -jar target/Vertex.jar
 ```
 
-El segundo comando inicia el JAR ejecutable creado por Maven. La clase de inicio es `com.mycompany.problema.programacion.lineal.ProblemaProgramacionLineal`.
+El comando `mvn clean package` genera un único JAR ejecutable en `target/Vertex.jar`, con todas las dependencias incluidas. La clase de inicio es `com.mycompany.problema.programacion.lineal.ProblemaProgramacionLineal`.
+
+> La carpeta `target/` no está incluida en este repositorio (se genera al compilar). Si solo quieres usar la aplicación sin compilarla, ve a la sección [Descarga](#descarga).
 
 ## Formato de entrada
 

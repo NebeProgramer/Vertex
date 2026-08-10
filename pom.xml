@@ -2,8 +2,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.mycompany</groupId>
-    <artifactId>Problema-Programacion-Lineal</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <artifactId>Vertex</artifactId>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
@@ -19,8 +19,13 @@
         <exec.mainClass>com.mycompany.problema.programacion.lineal.ProblemaProgramacionLineal</exec.mainClass>
     </properties>
     <build>
+        <finalName>Vertex</finalName>
         <plugins>
-            <!-- Genera un JAR ejecutable con todas las dependencias incluidas. -->
+            <!-- Genera un JAR ejecutable con todas las dependencias incluidas.
+                 outputFile apunta al mismo archivo que produce el jar plano
+                 por defecto (target/Vertex.jar), así el shade-plugin lo
+                 SOBREESCRIBE con la versión ejecutable en vez de crear un
+                 archivo aparte con nombre distinto (original-*.jar). -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -32,12 +37,15 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>app</shadedClassifierName>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <outputFile>${project.build.directory}/${project.build.finalName}.jar</outputFile>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.mycompany.problema.programacion.lineal.ProblemaProgramacionLineal</mainClass>
+                                    <manifestEntries>
+                                        <Implementation-Version>${project.version}</Implementation-Version>
+                                    </manifestEntries>
                                 </transformer>
                             </transformers>
                         </configuration>
