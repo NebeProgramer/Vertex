@@ -12,26 +12,23 @@ Aplicación de escritorio en Java para modelar y resolver problemas de optimizac
 
 No hace falta compilar nada para usar Vertex: solo necesitas tener **Java 17 o superior** instalado (JRE es suficiente).
 
-**[⬇ Descargar la última versión](https://repositorio-aeop.onrender.com/desktop/Vertex)**
+**[⬇ Descargar la última versión](https://github.com/NebeProgramer/Vertex/releases/latest/download/Vertex.zip)**
 
 También puedes buscar el `.zip` de cada versión en la sección [Releases](https://github.com/NebeProgramer/Vertex/releases) de este repositorio.
 
-1. Descarga y descomprime `target.zip`.
+1. Descarga y descomprime `Vertex.zip`.
 2. Ejecuta `Vertex.jar` con doble clic, o desde una terminal:
 
    ```bash
    java -jar Vertex.jar
    ```
 
-La aplicación revisa automáticamente al abrirse si hay una versión más nueva disponible y te avisa con un enlace de descarga.
-
-
 ## Funcionalidades
 
 - Optimización de problemas de **maximización** y **minimización**.
 - Validación de la sintaxis de las expresiones y de las restricciones.
-- Visualización de tablas y pasos intermedios de los algoritmos.
-- Gráfica de las restricciones, región factible y solución óptima cuando el problema tiene dos variables.
+- Visualización de tablas y pasos intermedios de los algoritmos, indicando en cada paso si la solución es factible y si ya es óptima.
+- Gráfica de las restricciones, región factible y solución óptima cuando el problema tiene dos variables, con todos los puntos de intersección factibles marcados y un cuadro flotante con sus valores al pasar el mouse sobre ellos.
 - Formato visual de subíndices para variables como `x1`, `x2` o `x11`.
 
 ## Métodos implementados
@@ -140,3 +137,8 @@ src/main/java/
 ## Estado del proyecto
 
 No se incluyen pruebas automatizadas ni una licencia explícita. Antes de reutilizar o distribuir el código, agregue una licencia adecuada y verifique los resultados con casos de prueba conocidos.
+
+## Notas
+
+La aplicación revisa automáticamente al abrirse si hay una versión más nueva disponible y te avisa con un enlace de descarga.
+La aplicación incluye un recordatorio de donación, con el botón 'Tal vez más tarde' este se ocultará por 15 días
