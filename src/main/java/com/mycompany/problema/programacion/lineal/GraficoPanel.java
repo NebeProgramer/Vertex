@@ -8,8 +8,11 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JPanel;
+import javax.swing.ToolTipManager;
 
 /**
  * Panel que dibuja el plano cartesiano, las rectas de las restricciones,
@@ -26,6 +29,8 @@ public class GraficoPanel extends JPanel {
 
     private double[][] Rmat;
     private List<double[]> poligono;
+    private List<double[]> puntosFactibles; // cada elemento: {x1, x2, Z}
+    private List<int[]> pantallaFactibles;  // posición en pantalla de cada punto de puntosFactibles (mismo índice)
     private double[] optimo;
     private double zOptimo;
     private boolean hayResultado = false;
@@ -33,18 +38,24 @@ public class GraficoPanel extends JPanel {
 
     public GraficoPanel() {
         setBackground(Color.WHITE);
+        // habilita el cuadro flotante (tooltip) al pasar el mouse sobre un punto factible
+        ToolTipManager.sharedInstance().registerComponent(this);
+        setToolTipText("");
     }
 
     /**
-     * @param Rmat     matriz de restricciones [a, b, c, tipo] (tipo: 0=&lt;=, 1=&gt;=, 2==)
-     * @param poligono vértices de la región factible ya ordenados (para sombrear); puede ser null si no hay región
-     * @param optimo   punto óptimo [x1, x2]; null si no existe
-     * @param zOptimo  valor óptimo de Z
-     * @param factible si la región factible existe
+     * @param Rmat            matriz de restricciones [a, b, c, tipo] (tipo: 0=&lt;=, 1=&gt;=, 2==)
+     * @param poligono        vértices de la región factible ya ordenados (para sombrear); puede ser null si no hay región
+     * @param puntosFactibles todas las intersecciones que son puntos factibles, como {x1, x2, Z}; puede ser null
+     * @param optimo          punto óptimo [x1, x2]; null si no existe
+     * @param zOptimo         valor óptimo de Z
+     * @param factible        si la región factible existe
      */
-    public void mostrarResultado(double[][] Rmat, List<double[]> poligono, double[] optimo, double zOptimo, boolean factible) {
+    public void mostrarResultado(double[][] Rmat, List<double[]> poligono, List<double[]> puntosFactibles,
+            double[] optimo, double zOptimo, boolean factible) {
         this.Rmat = Rmat;
         this.poligono = poligono;
+        this.puntosFactibles = puntosFactibles;
         this.optimo = optimo;
         this.zOptimo = zOptimo;
         this.esFactible = factible;
@@ -54,7 +65,38 @@ public class GraficoPanel extends JPanel {
 
     public void limpiar() {
         this.hayResultado = false;
+        this.puntosFactibles = null;
+        this.pantallaFactibles = null;
         repaint();
+    }
+
+    /**
+     * Busca si el mouse está sobre alguno de los puntos factibles dibujados
+     * (usa las posiciones de pantalla calculadas en el último paintComponent)
+     * y arma el texto del cuadro flotante con x1, x2 y Z de ese punto.
+     */
+    @Override
+    public String getToolTipText(MouseEvent event) {
+        if (pantallaFactibles == null || puntosFactibles == null) {
+            return null;
+        }
+        int mx = event.getX();
+        int my = event.getY();
+        for (int i = 0; i < pantallaFactibles.size(); i++) {
+            int[] pantalla = pantallaFactibles.get(i);
+            double dist = Math.hypot(mx - pantalla[0], my - pantalla[1]);
+            if (dist <= 8) {
+                double[] datos = puntosFactibles.get(i);
+                boolean esOptimo = optimo != null
+                        && Math.abs(datos[0] - optimo[0]) < 1e-6
+                        && Math.abs(datos[1] - optimo[1]) < 1e-6;
+                return String.format(
+                        "<html>x1 = %.3f<br>x2 = %.3f<br>Z = %.3f%s</html>",
+                        datos[0], datos[1], datos[2],
+                        esOptimo ? "<br><b>(óptimo)</b>" : "");
+            }
+        }
+        return null;
     }
 
     @Override
@@ -155,13 +197,34 @@ public class GraficoPanel extends JPanel {
             }
         }
 
-        // ---- punto óptimo ----
+        // ---- puntos factibles (rojo) ----
+        pantallaFactibles = new ArrayList<>();
+        if (puntosFactibles != null) {
+            for (double[] p : puntosFactibles) {
+                int px = margen + (int) (p[0] / maxX * plotW);
+                int py = h - margen - (int) (p[1] / maxY * plotH);
+                pantallaFactibles.add(new int[]{px, py});
+
+                boolean esOptimo = optimo != null
+                        && Math.abs(p[0] - optimo[0]) < 1e-6
+                        && Math.abs(p[1] - optimo[1]) < 1e-6;
+                if (!esOptimo) {
+                    g2.setColor(new Color(220, 30, 30));
+                    g2.fillOval(px - 4, py - 4, 8, 8);
+                    g2.setColor(Color.DARK_GRAY);
+                    g2.drawOval(px - 4, py - 4, 8, 8);
+                }
+            }
+        }
+
+        // ---- punto óptimo (verde) ----
         if (optimo != null) {
             int px = margen + (int) (optimo[0] / maxX * plotW);
             int py = h - margen - (int) (optimo[1] / maxY * plotH);
-            g2.setColor(new Color(220, 30, 30));
-            g2.fillOval(px - 5, py - 5, 10, 10);
+            g2.setColor(new Color(30, 160, 60));
+            g2.fillOval(px - 6, py - 6, 12, 12);
             g2.setColor(Color.BLACK);
+            g2.drawOval(px - 6, py - 6, 12, 12);
             g2.drawString(String.format("(%.2f, %.2f)  Z=%.2f", optimo[0], optimo[1], zOptimo), px + 8, py - 8);
         }
     }

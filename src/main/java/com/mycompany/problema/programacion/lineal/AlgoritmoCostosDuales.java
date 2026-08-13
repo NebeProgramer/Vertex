@@ -861,10 +861,44 @@ public class AlgoritmoCostosDuales extends javax.swing.JFrame implements MetodoP
         btnAnterior.setEnabled(idx > 0);
         btnSiguiente.setEnabled(idx < pasosAsigna.size() - 1);
 
-        if (resultadoTexto != null) {
-            txtResultado.setText(resultadoTexto);
-        }
+        txtResultado.setText(construirTextoPaso(idx, Asigna));
         TablaTransporte.repaint();
+    }
+
+    /**
+     * Arma el texto de resultado propio de la asignación que se está
+     * mostrando: costo total de ese paso y si ya es la asignación óptima
+     * (la última tabla, y solo si se logró completar el método).
+     */
+    private String construirTextoPaso(int idx, double[][] Asigna) {
+        double zPaso = 0;
+        for (int i = 0; i < Asigna.length; i++) {
+            for (int j = 0; j < Asigna[i].length; j++) {
+                zPaso += costoReal[i][j] * Asigna[i][j];
+            }
+        }
+
+        boolean esUltimaTabla = idx == pasosAsigna.size() - 1;
+        boolean esOptimo = esUltimaTabla && factible;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Tabla ").append(idx + 1).append(" de ").append(pasosAsigna.size()).append(":\n");
+        for (int i = 0; i < Asigna.length; i++) {
+            for (int j = 0; j < Asigna[i].length; j++) {
+                if (Asigna[i][j] > EPS) {
+                    sb.append(nombresFilas[i]).append(" → ").append(nombresColumnas[j])
+                            .append("  (envío ").append(fmt(Asigna[i][j])).append(")\n");
+                }
+            }
+        }
+        sb.append("Z = ").append(fmt(zPaso)).append("\n");
+        sb.append("Factible: ").append(factible || !esUltimaTabla ? "Sí" : "No").append("\n");
+        if (esUltimaTabla && !factible) {
+            sb.append("Óptimo: No — no se pudo completar el método (base degenerada sin ciclo válido)");
+        } else {
+            sb.append("Óptimo: ").append(esOptimo ? "Sí" : "No, aún se puede mejorar");
+        }
+        return sb.toString();
     }
 
     private String fmt(double v) {

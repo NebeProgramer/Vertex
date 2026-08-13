@@ -332,10 +332,17 @@ public class MetodoGrafico extends javax.swing.JFrame implements MetodoPL {
         //==========================
         // Resultado
         //==========================
+        // Puntos factibles con su Z, para pintarlos en el plano y mostrarlos en el tooltip
+        List<double[]> puntosFactibles = new ArrayList<>();
+        for (int i = 0; i < puntosValidos.size(); i++) {
+            double[] p = puntosValidos.get(i);
+            puntosFactibles.add(new double[]{p[0], p[1], zvalues.get(i)});
+        }
+
         boolean esMax = Tipo.equalsIgnoreCase("Max");
         if (mejorPunto != null && esIlimitado(Rmat, Z, esMax)) {
 
-            grafico.mostrarResultado(Rmat, null, null, 0, false);
+            grafico.mostrarResultado(Rmat, null, puntosFactibles, null, 0, false);
             txtResultado.setText(esMax
                     ? "El problema no tiene solución acotada: Z crece indefinidamente dentro de la región factible."
                     : "El problema no tiene solución acotada: Z decrece indefinidamente dentro de la región factible.");
@@ -343,7 +350,7 @@ public class MetodoGrafico extends javax.swing.JFrame implements MetodoPL {
         } else if (mejorPunto != null) {
 
             List<double[]> poligono = ordenarPoligono(puntosValidos);
-            grafico.mostrarResultado(Rmat, poligono, mejorPunto, mejorZ, true);
+            grafico.mostrarResultado(Rmat, poligono, puntosFactibles, mejorPunto, mejorZ, true);
 
             txtResultado.setText(String.format(
                     "Solución óptima:   \nx1 = %.3f    \nx2 = %.3f    \nZ = %.3f",
@@ -351,7 +358,7 @@ public class MetodoGrafico extends javax.swing.JFrame implements MetodoPL {
 
         } else {
 
-            grafico.mostrarResultado(Rmat, null, null, 0, false);
+            grafico.mostrarResultado(Rmat, null, null, null, 0, false);
             txtResultado.setText("No existe región factible para este problema.");
         }
 

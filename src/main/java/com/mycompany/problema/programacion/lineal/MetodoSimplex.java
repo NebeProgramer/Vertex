@@ -499,10 +499,49 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
         btnAnterior.setEnabled(idx > 0);
         btnSiguiente.setEnabled(idx < tableaus.size() - 1);
 
-        if (resultadoTexto != null) {
-            txtResultado.setText(resultadoTexto);
-        }
+        txtResultado.setText(construirTextoPaso(idx));
         TablaTableau.repaint();
+    }
+
+    /**
+     * Arma el texto de resultado propio de la tabla que se está mostrando:
+     * solución básica de ese paso, si es factible (todos los RHS &gt;= 0,
+     * siempre cierto en Simplex estándar) y si ya es la solución óptima
+     * (es decir, si esta es la última tabla).
+     */
+    private String construirTextoPaso(int idx) {
+        double[][] T = tableaus.get(idx);
+        int[] basis = basisHistory.get(idx);
+        int m = T.length - 1;
+        int totalCols = T[0].length;
+
+        double[] sol = new double[numVars];
+        for (int i = 0; i < m; i++) {
+            if (basis[i] < numVars) {
+                sol[basis[i]] = T[i][totalCols - 1];
+            }
+        }
+        double zRow = T[m][totalCols - 1];
+        double zPaso = esMin ? -zRow : zRow;
+
+        boolean factiblePaso = true;
+        for (int i = 0; i < m; i++) {
+            if (T[i][totalCols - 1] < -1e-6) {
+                factiblePaso = false;
+                break;
+            }
+        }
+        boolean esOptimo = idx == tableaus.size() - 1;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Tabla ").append(idx + 1).append(" de ").append(tableaus.size()).append(":\n");
+        for (int k = 0; k < numVars; k++) {
+            sb.append(varNames[k]).append(" = ").append(fmt(sol[k])).append("\n");
+        }
+        sb.append("Z = ").append(fmt(zPaso)).append("\n");
+        sb.append("Factible: ").append(factiblePaso ? "Sí" : "No").append("\n");
+        sb.append("Óptimo: ").append(esOptimo ? "Sí" : "No, aún se puede mejorar");
+        return sb.toString();
     }
 
     private double parseNum(String s) {

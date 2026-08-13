@@ -12,11 +12,11 @@ Aplicación de escritorio en Java para modelar y resolver problemas de optimizac
 
 No hace falta compilar nada para usar Vertex: solo necesitas tener **Java 17 o superior** instalado (JRE es suficiente).
 
-**[⬇ Descargar la última versión](https://github.com/NebeProgramer/Vertex/releases/latest/download/Vertex.zip)**
+**[⬇ Descargar la última versión](https://repositorio-aeop.onrender.com/desktop/Vertex)**
 
 También puedes buscar el `.zip` de cada versión en la sección [Releases](https://github.com/NebeProgramer/Vertex/releases) de este repositorio.
 
-1. Descarga y descomprime `Vertex.zip`.
+1. Descarga y descomprime `target.zip`.
 2. Ejecuta `Vertex.jar` con doble clic, o desde una terminal:
 
    ```bash
