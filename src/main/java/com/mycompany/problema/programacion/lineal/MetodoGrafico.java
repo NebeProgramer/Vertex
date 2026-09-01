@@ -35,6 +35,10 @@ public class MetodoGrafico extends javax.swing.JFrame implements MetodoPL {
     public MetodoGrafico() {
         initComponents();
         Recursos.aplicarIcono(this);
+        VentanaPrefs.aplicar(this);
+        Recursos.instalarAyudaEnBarraTitulo(this, "<html><b>Colorimetría — Gráfico</b><br>&#127811; Verde lima: vértice factible, no óptimo<br>&#127795; Verde bosque: vértice óptimo<br>&#128309; Azul: región factible</html>");
+        Recursos.envolverEnFondoAzul(this);
+        Recursos.modernizarVentana(this);
     }
 
     /**
@@ -54,7 +58,8 @@ public class MetodoGrafico extends javax.swing.JFrame implements MetodoPL {
         setTitle("Grafico");
         setBackground(new java.awt.Color(255, 255, 255));
         setPreferredSize(new java.awt.Dimension(712, 460));
-        setResizable(false);
+        setMinimumSize(new java.awt.Dimension(712, 460));
+        setResizable(true);
 
         grafico.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
@@ -92,7 +97,7 @@ public class MetodoGrafico extends javax.swing.JFrame implements MetodoPL {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(grafico, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(grafico, javax.swing.GroupLayout.DEFAULT_SIZE, 278, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 90, Short.MAX_VALUE)
                 .addContainerGap())
@@ -105,28 +110,8 @@ public class MetodoGrafico extends javax.swing.JFrame implements MetodoPL {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(MetodoGrafico.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(MetodoGrafico.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(MetodoGrafico.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(MetodoGrafico.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
+        com.formdev.flatlaf.FlatLightLaf.setup();
+
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {

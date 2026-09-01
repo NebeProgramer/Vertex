@@ -8,6 +8,7 @@ import java.util.Arrays;
 import javax.swing.JOptionPane;
 import java.util.regex.*;
 import java.util.*;
+import java.util.prefs.Preferences;
 import com.mycompany.problema.programacion.lineal.parser.ParserLP;
 import com.mycompany.problema.programacion.lineal.algoritmos.MetodoPL;
 
@@ -19,6 +20,17 @@ public class PrincipalPage extends javax.swing.JFrame {
 
     private String Fo;
     private String[] R;
+    private final com.mycompany.problema.programacion.lineal.algoritmos.Json_History historial
+            = new com.mycompany.problema.programacion.lineal.algoritmos.Json_History();
+    /** Nombre del algoritmo que efectivamente se resolvió en el último "Calcular" (para el historial). */
+    private String ultimoMetodoResuelto;
+    private MenuHistorial menuHistorial;
+    private SeleccionMultiAlgoritmo seleccionMulti;
+
+    private static final String PREF_X = "ventanaX";
+    private static final String PREF_Y = "ventanaY";
+    private static final String PREF_W = "ventanaAncho";
+    private static final String PREF_H = "ventanaAlto";
 
     /**
      * Creates new form PrincipalPage
@@ -29,6 +41,266 @@ public class PrincipalPage extends javax.swing.JFrame {
         ObjetiveFunction.setSoloUnaLinea(true);
         ObjetiveFunction.setBackground(java.awt.Color.WHITE);
         jScrollPane3.getViewport().setBackground(java.awt.Color.WHITE);
+        aplicarEstiloPrincipal();
+        reorganizarPrincipal();
+        instalarFondoTematico();
+        instalarMenuHistorial();
+        restaurarPosicionVentana();
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                guardarPosicionVentana();
+            }
+        });
+    }
+
+    private void aplicarEstiloPrincipal() {
+        java.awt.Color tinta = new java.awt.Color(23, 45, 66);
+        java.awt.Color acento = new java.awt.Color(68, 56, 208);
+
+        jPanel1.setBackground(java.awt.Color.WHITE);
+        jPanel1.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+                javax.swing.BorderFactory.createLineBorder(new java.awt.Color(220, 226, 234)),
+                javax.swing.BorderFactory.createEmptyBorder(18, 22, 20, 22)));
+        jLabel1.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 20));
+        jLabel2.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 20));
+        jLabel3.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 18));
+        jLabel1.setForeground(tinta);
+        jLabel2.setForeground(tinta);
+        jLabel3.setForeground(tinta);
+        jLabel4.setForeground(acento);
+        ObjetiveFunction.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 22));
+        Restrictions.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 16));
+        ZType.putClientProperty("JComponent.roundRect", true);
+        CalcButton.setBackground(acento);
+        CalcButton.setForeground(java.awt.Color.WHITE);
+        CalcButton.setPreferredSize(new java.awt.Dimension(140, 40));
+        jScrollPane1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(215, 222, 231)));
+        jScrollPane3.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(215, 222, 231)));
+    }
+
+    private void reorganizarPrincipal() {
+        jPanel1.removeAll();
+        jPanel1.setLayout(new java.awt.GridBagLayout());
+        jPanel1.setOpaque(false);
+        jPanel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        javax.swing.JPanel objetivo = crearTarjeta();
+        javax.swing.JPanel objetivoFila = new javax.swing.JPanel(new java.awt.GridBagLayout());
+        objetivoFila.setOpaque(false);
+        agregar(objetivoFila, jLabel1, 0, 0, 0, 0);
+        agregar(objetivoFila, ZType, 1, 0, 0, 0);
+        agregar(objetivoFila, jLabel4, 2, 0, 0, 0);
+        agregar(objetivoFila, jScrollPane3, 3, 0, 1, 1);
+        objetivo.add(objetivoFila, java.awt.BorderLayout.CENTER);
+
+        javax.swing.JPanel restricciones = crearTarjeta();
+        restricciones.add(jLabel2, java.awt.BorderLayout.NORTH);
+        restricciones.add(jScrollPane1, java.awt.BorderLayout.CENTER);
+        jScrollPane1.setPreferredSize(new java.awt.Dimension(770, 250));
+        jScrollPane1.setMinimumSize(new java.awt.Dimension(400, 180));
+
+        javax.swing.JPanel selector = crearTarjeta();
+        selector.add(jLabel3, java.awt.BorderLayout.WEST);
+        selector.add(seleccionMulti.getPanel(), java.awt.BorderLayout.CENTER);
+
+        java.awt.GridBagConstraints gbc = new java.awt.GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.weightx = 1;
+        gbc.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gbc.insets = new java.awt.Insets(0, 0, 14, 0);
+        gbc.gridy = 0;
+        jPanel1.add(objetivo, gbc);
+        gbc.gridy = 1;
+        jPanel1.add(restricciones, gbc);
+        gbc.gridy = 2;
+        jPanel1.add(selector, gbc);
+        gbc.gridy = 3;
+        gbc.insets = new java.awt.Insets(2, 0, 0, 0);
+        gbc.anchor = java.awt.GridBagConstraints.CENTER;
+        gbc.fill = java.awt.GridBagConstraints.NONE;
+        jPanel1.add(CalcButton, gbc);
+    }
+
+    private javax.swing.JPanel crearTarjeta() {
+        javax.swing.JPanel tarjeta = new javax.swing.JPanel(new java.awt.BorderLayout(12, 10));
+        tarjeta.setBackground(java.awt.Color.WHITE);
+        tarjeta.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+                javax.swing.BorderFactory.createLineBorder(new java.awt.Color(220, 226, 234)),
+                javax.swing.BorderFactory.createEmptyBorder(14, 16, 14, 16)));
+        return tarjeta;
+    }
+
+    private void agregar(javax.swing.JPanel panel, java.awt.Component componente,
+            int x, int y, double pesoX, double pesoY) {
+        java.awt.GridBagConstraints gbc = new java.awt.GridBagConstraints();
+        gbc.gridx = x;
+        gbc.gridy = y;
+        gbc.weightx = pesoX;
+        gbc.weighty = pesoY;
+        gbc.fill = pesoX > 0 || pesoY > 0
+                ? java.awt.GridBagConstraints.BOTH : java.awt.GridBagConstraints.NONE;
+        gbc.insets = new java.awt.Insets(0, 0, 0, 10);
+        panel.add(componente, gbc);
+    }
+
+    /** Arma el botón hamburguesa y el panel de historial. */
+    private void instalarMenuHistorial() {
+        menuHistorial = new MenuHistorial(historial, ObjetiveFunction, ZType, Restrictions, AlgoritmoBox);
+        menuHistorial.instalarEn(this, getLayeredPane(), getWidth(), getHeight());
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent evt) {
+                menuHistorial.reposicionar(getWidth(), getHeight());
+            }
+
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent evt) {
+                menuHistorial.reposicionar(getWidth(), getHeight());
+            }
+        });
+    }
+
+    private void instalarSeleccionMultiple() {
+        java.awt.event.KeyAdapter recalculador = new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent e) {
+                seleccionMulti.recalcularCompatibilidad();
+            }
+        };
+        ObjetiveFunction.addKeyListener(recalculador);
+        Restrictions.addKeyListener(recalculador);
+    }
+
+    /** Compatibilidad por formato de variables, separada de los checks matemáticos. */
+    private boolean esCompatible(String nombreAlgoritmo, List<String> seleccionados) {
+        FamiliaFormato familiaSeleccionada = FamiliaFormato.GENERAL;
+        for (String seleccionado : seleccionados) {
+            FamiliaFormato familia = familiaFormato(seleccionado);
+            if (familia != FamiliaFormato.GENERAL) {
+                familiaSeleccionada = familia;
+                break;
+            }
+        }
+        FamiliaFormato familiaCandidata = familiaFormato(nombreAlgoritmo);
+        return familiaSeleccionada == FamiliaFormato.GENERAL
+                || familiaCandidata == FamiliaFormato.GENERAL
+                || familiaCandidata == familiaSeleccionada;
+    }
+
+    private FamiliaFormato familiaFormato(String nombreAlgoritmo) {
+        switch (nombreAlgoritmo) {
+            case "Grafico":
+            case "Simplex":
+            case "Big M":
+                return FamiliaFormato.VECTOR;
+            case "Simplex Dual":
+            case "Costos Dual":
+            case "Hungaro":
+                return FamiliaFormato.PAREJAS;
+            default:
+                return FamiliaFormato.GENERAL;
+        }
+    }
+
+    private enum FamiliaFormato {
+        VECTOR, PAREJAS, GENERAL
+    }
+
+    /** Crea una instancia nueva del algoritmo por nombre, para MultiCalculos. */
+    private com.mycompany.problema.programacion.lineal.algoritmos.MetodoPL crearInstancia(String nombreAlgoritmo) {
+        switch (nombreAlgoritmo) {
+            case "Grafico":
+                return new MetodoGrafico();
+            case "Numerico":
+                return new MetodoNumerico();
+            case "Simplex":
+                return new MetodoSimplex();
+            case "Big M":
+                return new MetodoBigM();
+            case "Simplex Dual":
+                return new AlgoritmoDual();
+            case "Costos Dual":
+                return new AlgoritmoCostosDuales();
+            case "Hungaro":
+                return new AlgoritmoHungaro();
+            default:
+                throw new IllegalArgumentException("Algoritmo desconocido: " + nombreAlgoritmo);
+        }
+    }
+
+    /**
+     * Cambia el contentPane blanco (armado en initComponents) por
+     * FondoMatematico, reubicando jPanel1 (la tarjeta blanca con todo el
+     * formulario) con exactamente el mismo GridBagConstraints/margen que ya
+     * tenía. Se hace acá y no en initComponents para no arriesgar que el
+     * editor de NetBeans regenere/pierda este cambio.
+     */
+    private void instalarFondoTematico() {
+        java.awt.GridBagConstraints gbc = new java.awt.GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gbc.insets = new java.awt.Insets(20, 20, 20, 20);
+
+        getContentPane().remove(jPanel1);
+
+        FondoMatematico fondo = new FondoMatematico();
+        fondo.setLayout(new java.awt.BorderLayout(0, 10));
+        javax.swing.JPanel tarjetaLogo = new javax.swing.JPanel(new java.awt.BorderLayout());
+        tarjetaLogo.setBackground(java.awt.Color.WHITE);
+        tarjetaLogo.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(220, 226, 234)),
+            javax.swing.BorderFactory.createEmptyBorder(8, 16, 8, 16)));
+        tarjetaLogo.add(lblLogo, java.awt.BorderLayout.CENTER);
+        javax.swing.JPanel barraSuperior = new javax.swing.JPanel(new java.awt.FlowLayout(
+            java.awt.FlowLayout.LEFT, 16, 16));
+        barraSuperior.setOpaque(false);
+        barraSuperior.add(tarjetaLogo);
+        fondo.add(barraSuperior, java.awt.BorderLayout.NORTH);
+
+        javax.swing.JPanel areaPrincipal = new javax.swing.JPanel(new java.awt.GridBagLayout());
+        areaPrincipal.setOpaque(false);
+        java.awt.GridBagConstraints gbcPrincipal = new java.awt.GridBagConstraints();
+        gbcPrincipal.gridx = 0;
+        gbcPrincipal.gridy = 0;
+        gbcPrincipal.anchor = java.awt.GridBagConstraints.CENTER;
+        gbcPrincipal.insets = new java.awt.Insets(0, 20, 20, 20);
+        areaPrincipal.add(jPanel1, gbcPrincipal);
+        fondo.add(areaPrincipal, java.awt.BorderLayout.CENTER);
+        setContentPane(fondo);
+
+        revalidate();
+        repaint();
+        pack(); // el pack() de initComponents ya corrió con el contentPane viejo
+    }
+
+    /**
+     * Si hay una posición/tamaño guardados de una sesión anterior, los
+     * restaura. Si no (primera vez que se abre la app), centra la ventana
+     * en la pantalla en vez de dejarla en la esquina superior izquierda
+     * (comportamiento por defecto de Swing/Maven al no indicar ubicación).
+     */
+    private void restaurarPosicionVentana() {
+        Preferences prefs = Preferences.userNodeForPackage(PrincipalPage.class);
+        int x = prefs.getInt(PREF_X, Integer.MIN_VALUE);
+        int y = prefs.getInt(PREF_Y, Integer.MIN_VALUE);
+        int w = prefs.getInt(PREF_W, -1);
+        int h = prefs.getInt(PREF_H, -1);
+
+        if (x != Integer.MIN_VALUE && y != Integer.MIN_VALUE && w > 0 && h > 0) {
+            setBounds(x, y, w, h);
+        } else {
+            setLocationRelativeTo(null); // centrado en pantalla
+        }
+    }
+
+    private void guardarPosicionVentana() {
+        Preferences prefs = Preferences.userNodeForPackage(PrincipalPage.class);
+        prefs.putInt(PREF_X, getX());
+        prefs.putInt(PREF_Y, getY());
+        prefs.putInt(PREF_W, getWidth());
+        prefs.putInt(PREF_H, getHeight());
     }
 
     /**
@@ -61,7 +333,11 @@ public class PrincipalPage extends javax.swing.JFrame {
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(40, 60, 110));
-        jLabel1.setText("Z");
+        jLabel1.setText("Z (?)");
+        jLabel1.setToolTipText("<html><b>Función objetivo</b><br>"
+                + "Elige Max o Min en el selector de al lado, y escribe la función<br>"
+                + "con coeficiente + x + subíndice, ej: <b>3x1 + 5x2</b>.<br>"
+                + "No hace falta escribir \"Z =\", ya está puesto.</html>");
 
         ZType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Max", "Min" }));
         ZType.addActionListener(new java.awt.event.ActionListener() {
@@ -72,7 +348,11 @@ public class PrincipalPage extends javax.swing.JFrame {
 
         jLabel2.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(40, 60, 110));
-        jLabel2.setText("Sujeto a:");
+        jLabel2.setText("Sujeto a: (?)");
+        jLabel2.setToolTipText("<html><b>Restricciones</b><br>"
+                + "Una restricción por línea (Enter para agregar otra).<br>"
+                + "Operadores permitidos: <b>&lt;=</b>, <b>&gt;=</b>, <b>=</b>.<br>"
+                + "Ej: <b>2x1 + 3x2 &lt;= 18</b></html>");
 
         Restrictions.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
@@ -86,6 +366,8 @@ public class PrincipalPage extends javax.swing.JFrame {
         jLabel3.setText("Algoritmo:");
 
         AlgoritmoBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Decide por mi", "Grafico", "Numerico", "Simplex", "Big M", "Simplex Dual", "Costos Dual", "Hungaro" }));
+        seleccionMulti = new SeleccionMultiAlgoritmo(this, AlgoritmoBox, this::esCompatible);
+        instalarSeleccionMultiple();
 
         CalcButton.setBackground(new java.awt.Color(51, 102, 204));
         CalcButton.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 16));
@@ -124,7 +406,7 @@ public class PrincipalPage extends javax.swing.JFrame {
                         .addGroup(jPanel1Layout.createSequentialGroup()
                             .addComponent(lblLogo)
                             .addGap(18, 18, 18)
-                            .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                             .addComponent(ZType, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -134,7 +416,7 @@ public class PrincipalPage extends javax.swing.JFrame {
                         .addGroup(jPanel1Layout.createSequentialGroup()
                             .addComponent(jLabel3)
                             .addGap(18, 18, 18)
-                            .addComponent(AlgoritmoBox, javax.swing.GroupLayout.PREFERRED_SIZE, 492, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(seleccionMulti.getPanel(), javax.swing.GroupLayout.PREFERRED_SIZE, 492, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addGap(18, 18, 18)
                             .addComponent(CalcButton, javax.swing.GroupLayout.PREFERRED_SIZE, 131, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -155,7 +437,7 @@ public class PrincipalPage extends javax.swing.JFrame {
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 337, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGap(18, 18, 18)
                     .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addComponent(AlgoritmoBox)
+                        .addComponent(seleccionMulti.getPanel())
                         .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(CalcButton, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -198,6 +480,21 @@ public class PrincipalPage extends javax.swing.JFrame {
             }
 
             //selección de metodo a usar
+            ultimoMetodoResuelto = null;
+
+            if (seleccionMulti.isModoMultiActivo()) {
+                java.util.List<String> elegidos = seleccionMulti.getSeleccionados();
+                java.util.List<com.mycompany.problema.programacion.lineal.algoritmos.MetodoPL> resueltos = new java.util.ArrayList<>();
+                for (String nombre : elegidos) {
+                    com.mycompany.problema.programacion.lineal.algoritmos.MetodoPL instancia = crearInstancia(nombre);
+                    instancia.resolver(FO, R, tipo);
+                    resueltos.add(instancia);
+                }
+                new MultiCalculos(resueltos, elegidos).setVisible(true);
+                historial.guardarCalculo(FO, R, tipo, elegidos.toArray(new String[0]));
+                return;
+            }
+
             int metodo;
             switch (AlgoritmoBox.getSelectedIndex()) {
                 case 0:
@@ -206,60 +503,60 @@ public class PrincipalPage extends javax.swing.JFrame {
                     // 1. Algoritmo Húngaro → problema de asignación
                     // Condición: todas las restricciones del tipo ∑ xij = 1 (filas/columnas balanceadas, valores binarios)
                     if (checkHungaro(R, FO, metodo)) {
-                        resolverYMostrar(new AlgoritmoHungaro(), FO, R, tipo);
+                        resolverYMostrar(new AlgoritmoHungaro(), FO, R, tipo, "Hungaro");
 
                         // 2. Algoritmo de Costos Duales → transporte/distribución
                         // Condición: problema de transporte con oferta = demanda total
                     } else if (checkCostosDuales(R, FO, metodo)) {
-                        resolverYMostrar(new AlgoritmoCostosDuales(), FO, R, tipo);
+                        resolverYMostrar(new AlgoritmoCostosDuales(), FO, R, tipo, "Costos Dual");
 
                         // 3. Método Dual Simplex
                         // Condición: solución inicial primal no factible pero dual sí factible
                     } else if (checkDualSimplex(R, FO, metodo)) {
-                        resolverYMostrar(new AlgoritmoDual(), FO, R, tipo);
+                        resolverYMostrar(new AlgoritmoDual(), FO, R, tipo, "Simplex Dual");
 
                         // 4. Método Gráfico
                         // Condición: 2 variables en FO y restricciones lineales
                     } else if (checkGrafico(R, FO, metodo)) {
-                        resolverYMostrar(new MetodoGrafico(), FO, R, tipo);
+                        resolverYMostrar(new MetodoGrafico(), FO, R, tipo, "Grafico");
 
                         // 5. Método Big-M
                         // Condición: existen restricciones con ≥ o = y término independiente ≠ 0
                     } else if (checkBigM(R, FO, metodo)) {
-                        resolverYMostrar(new MetodoBigM(), FO, R, tipo);
+                        resolverYMostrar(new MetodoBigM(), FO, R, tipo, "Big M");
 
                         // 6. Método Simplex
                         // Condición: siempre aplica, caso general
                     } else if (checkSimplex(R, FO, metodo)) {
-                        resolverYMostrar(new MetodoSimplex(), FO, R, tipo);
+                        resolverYMostrar(new MetodoSimplex(), FO, R, tipo, "Simplex");
 
                         // 7. Método Numérico (fallback)
                         // Condición: casos especiales o pruebas numéricas
                     } else {
-                        resolverYMostrar(new MetodoNumerico(), FO, R, tipo);
+                        resolverYMostrar(new MetodoNumerico(), FO, R, tipo, "Numerico");
                     }
                     //Decide por mi, Grafico, Numerico, Simplex, Big M, Simplex Dual, Costos Dual, Hungaro
                     break;
                 case 1:
                     metodo = 1;
                     if (checkGrafico(R, FO, metodo)) {
-                        resolverYMostrar(new MetodoGrafico(), FO, R, tipo);
+                        resolverYMostrar(new MetodoGrafico(), FO, R, tipo, "Grafico");
                     } else {
                         ofrecerFallbackSimplex("El problema no cumple condiciones para un método especializado.", FO, R, tipo);
                     }
                     break;
                 case 2:
                     metodo = 2;
-                    resolverYMostrar(new MetodoNumerico(), FO, R, tipo);
+                    resolverYMostrar(new MetodoNumerico(), FO, R, tipo, "Numerico");
                     break;
                 case 3:
                     metodo = 3;
-                    resolverYMostrar(new MetodoSimplex(), FO, R, tipo);
+                    resolverYMostrar(new MetodoSimplex(), FO, R, tipo, "Simplex");
                     break;
                 case 4:
                     metodo = 4;
                     if (checkBigM(R, FO, metodo)) {
-                        resolverYMostrar(new MetodoBigM(), FO, R, tipo);
+                        resolverYMostrar(new MetodoBigM(), FO, R, tipo, "Big M");
                     } else {
                         ofrecerFallbackSimplex("El problema no cumple condiciones para Big M.", FO, R, tipo);
                     }
@@ -267,21 +564,26 @@ public class PrincipalPage extends javax.swing.JFrame {
                 case 5:
                     metodo = 5;
                     if (checkDualSimplex(R, FO, metodo)) {
-                        resolverYMostrar(new AlgoritmoDual(), FO, R, tipo);
+                        resolverYMostrar(new AlgoritmoDual(), FO, R, tipo, "Simplex Dual");
                     } else {
                         ofrecerFallbackSimplex("El problema no cumple condiciones para el Simplex Dual.", FO, R, tipo);
                     }
                     break;
                 case 6:
                     metodo = 6;
-                    resolverYMostrar(new AlgoritmoCostosDuales(), FO, R, tipo);
+                    resolverYMostrar(new AlgoritmoCostosDuales(), FO, R, tipo, "Costos Dual");
                     break;
                 case 7:
                     metodo = 7;
-                    resolverYMostrar(new AlgoritmoHungaro(), FO, R, tipo);
+                    resolverYMostrar(new AlgoritmoHungaro(), FO, R, tipo, "Hungaro");
                     break;
                 default:
                     break;
+            }
+
+            // Se resolvió algo de verdad (no se canceló un fallback) -> guardar/actualizar historial
+            if (ultimoMetodoResuelto != null) {
+                historial.guardarCalculo(FO, R, tipo, new String[]{ultimoMetodoResuelto});
             }
 
         } catch (IllegalArgumentException ex) {
@@ -296,9 +598,10 @@ public class PrincipalPage extends javax.swing.JFrame {
      * cualquiera de las 7 ventanas sin necesidad de repetir
      * "new X(); x.calculos(...); x.show();" en cada rama del switch.
      */
-    private void resolverYMostrar(MetodoPL metodo, String FO, String[] R, String tipo) {
+    private void resolverYMostrar(MetodoPL metodo, String FO, String[] R, String tipo, String nombreMetodo) {
         metodo.resolver(FO, R, tipo);
         metodo.mostrar();
+        ultimoMetodoResuelto = nombreMetodo;
     }
 
     /** Pregunta si se quiere resolver con Simplex cuando el método elegido no aplica, y lo corre si acepta. */
@@ -311,7 +614,7 @@ public class PrincipalPage extends javax.swing.JFrame {
                 JOptionPane.QUESTION_MESSAGE
         );
         if (opcion == JOptionPane.YES_OPTION) {
-            resolverYMostrar(new MetodoSimplex(), FO, R, tipo);
+            resolverYMostrar(new MetodoSimplex(), FO, R, tipo, "Simplex");
         }
     }
 

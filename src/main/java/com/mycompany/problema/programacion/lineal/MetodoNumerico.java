@@ -31,16 +31,20 @@ import com.mycompany.problema.programacion.lineal.parser.ParserLP;
  */
 public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
 
-    private static final Color COLOR_OPTIMO = new Color(255, 176, 120);
+    // Naranja queda reservado en todo el proyecto para "pivote/causante" (Simplex, Big M,
+    // Dual, Húngaro, Costos Duales), así que aquí "óptimo" pasa a verde bosque para no
+    // chocar con ese significado. Los dos verdes se diferencian por tono, no solo brillo,
+    // para que sigan siendo distinguibles con daltonismo (deuteranopía).
+    private static final Color COLOR_OPTIMO = new Color(40, 150, 70);     // verde bosque
     private static final Color COLOR_INFACTIBLE = new Color(255, 210, 210);
-    private static final Color COLOR_FACTIBLE = new Color(220, 255, 220);
+    private static final Color COLOR_FACTIBLE = new Color(200, 230, 110); // verde lima
     private static final double EPS = 1e-7;
     private static final int MAX_VARS_TOTALES = 18; // evita que C(n,m) explote
 
     private String[] varNames;
     private int filaOptima = -1;
     private String resultadoTexto;
-    private int[] filaEstado; // por fila: 0 = infactible/singular (rojo), 1 = factible (verde), 2 = óptima (naranja)
+    private int[] filaEstado; // por fila: 0 = infactible/singular (rojo), 1 = factible (verde lima), 2 = óptima (verde bosque)
 
     @Override
     public void resolver(String FO, String[] R, String tipo) {
@@ -55,12 +59,16 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
     public MetodoNumerico() {
         initComponents();
         Recursos.aplicarIcono(this);
+        VentanaPrefs.aplicar(this);
+        Recursos.instalarAyudaEnBarraTitulo(this, "<html><b>Colorimetría — Numérico</b><br>&#128992;&#65039; Rojo: no factible, no óptima<br>&#127811; Verde lima: factible, no óptima<br>&#127795; Verde bosque: factible y óptima</html>");
+        Recursos.envolverEnFondoAzul(this);
+        Recursos.modernizarVentana(this);
         instalarRendererColores(TablaSoluciones);
     }
 
     /**
-     * Colorea cada fila completa según filaEstado: verde si la solución
-     * básica es factible, naranja si además es la óptima, rojo si es
+     * Colorea cada fila completa según filaEstado: verde lima si la solución
+     * básica es factible, verde bosque si además es la óptima, rojo si es
      * infactible o el sistema salió singular.
      */
     private void instalarRendererColores(JTable tabla) {
@@ -96,7 +104,8 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
         setTitle("Metodo Numerico (enumeracion de puntos extremos)");
         setBackground(new java.awt.Color(255, 255, 255));
         setPreferredSize(new java.awt.Dimension(712, 460));
-        setResizable(false);
+        setMinimumSize(new java.awt.Dimension(712, 460));
+        setResizable(true);
 
         TablaSoluciones.setEnabled(false);
         TablaSoluciones.setFont(new java.awt.Font("Consolas", 0, 13)); // NOI18N
@@ -124,7 +133,7 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 260, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 260, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 90, Short.MAX_VALUE)
                 .addContainerGap())
@@ -134,16 +143,7 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
     }// </editor-fold>//GEN-END:initComponents
 
     public static void main(String args[]) {
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(MetodoNumerico.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
+        com.formdev.flatlaf.FlatLightLaf.setup();
 
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {

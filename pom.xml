@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.mycompany</groupId>
     <artifactId>Vertex</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
@@ -11,6 +11,17 @@
             <artifactId>AbsoluteLayout</artifactId>
             <version>RELEASE220</version>
         </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20240303</version>
+        </dependency>
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf</artifactId>
+            <version>3.7.2</version>
+        </dependency>
+
     </dependencies>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -22,10 +33,10 @@
         <finalName>Vertex</finalName>
         <plugins>
             <!-- Genera un JAR ejecutable con todas las dependencias incluidas.
-                 outputFile apunta al mismo archivo que produce el jar plano
-                 por defecto (target/Vertex.jar), así el shade-plugin lo
-                 SOBREESCRIBE con la versión ejecutable en vez de crear un
-                 archivo aparte con nombre distinto (original-*.jar). -->
+            outputFile apunta al mismo archivo que produce el jar plano
+            por defecto (target/Vertex.jar), así el shade-plugin lo
+            SOBREESCRIBE con la versión ejecutable en vez de crear un
+            archivo aparte con nombre distinto (original-*.jar). -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>

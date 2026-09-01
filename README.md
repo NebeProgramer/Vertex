@@ -1,5 +1,3 @@
-
-
 # Vertex — Solucionador de Programación Lineal
 
 Aplicación de escritorio en Java para modelar y resolver problemas de optimización lineal. Vertex permite escribir una función objetivo y sus restricciones, seleccionar un método de solución o dejar que la aplicación recomiende uno de acuerdo con la estructura del problema.
@@ -30,6 +28,13 @@ También puedes buscar el `.zip` de cada versión en la sección [Releases](http
 - Visualización de tablas y pasos intermedios de los algoritmos, indicando en cada paso si la solución es factible y si ya es óptima.
 - Gráfica de las restricciones, región factible y solución óptima cuando el problema tiene dos variables, con todos los puntos de intersección factibles marcados y un cuadro flotante con sus valores al pasar el mouse sobre ellos.
 - Formato visual de subíndices para variables como `x1`, `x2` o `x11`.
+- Interfaz moderna con tema personalizado (FlatLaf), incluyendo un menú de historial deslizante.
+- Menú de historial para guardar, editar y eliminar tus cálculos más recientes.
+- Multicálculo: ventana unificadora de todos los cálculos, para que puedas ver la solución de un problema de todas las maneras que elijas.
+- Compatibilidad: evita la selección de métodos incompatibles con la estructura del problema actual.
+    Ejemplo: si el problema no tiene exactamente dos variables, el método Gráfico queda deshabilitado automáticamente.
+- Revisión automática de nuevas versiones al abrir la aplicación, con un enlace de descarga si hay una disponible.
+- Recordatorio de donación opcional: con el botón "Tal vez más tarde" se oculta por 15 días.
 
 ## Métodos implementados
 
@@ -45,13 +50,33 @@ También puedes buscar el `.zip` de cada versión en la sección [Releases](http
 
 La opción **“Decide por mí”** analiza la estructura de entrada y elige entre los métodos disponibles. Para transporte desbalanceado, el método de Costos Duales agrega una fila o columna ficticia de costo cero.
 
+## Colorimetría
+
+A continuación se especifica una tabla con los colores usados y su significado en cada uno de los algoritmos
+
+| Color | Muestra | Método / Uso Unificado | RGB | HEX |
+| :--- | :---: | :--- | :--- | :--- |
+| **Naranja** | `🟧` | **Pivote o elemento causante**. Celda pivote exacta (Simplex), número causante de operaciones (Húngaro) y celda que entra a la base (Costos Duales). | `255, 176, 120` | `#FFB078` |
+| **Verde Bosque** | `🟩` | **Punto o resultado óptimo**. Punto óptimo (Gráfico) y celda factible y óptima (Numérico). | `40, 150, 70` | `#289646` |
+| **Verde Lima** | `🟢` | **Factible pero no óptimo**. Puntos intermedios (Gráfico) y celdas válidas que no alcanzan el óptimo (Numérico). | `200, 230, 110` | `#C8E66E` |
+| **Verde Claro** | `💚` | **Cambio de estado o celda clave**. Celdas que cambiaron de valor / suman θ (Simplex/Costos) y celdas con valor cero (Húngaro). | `200, 255, 200` | `#C8FFC8` |
+| **Amarillo** | `🟨` | **Área de influencia del pivote**. Fila o columna asociada al pivote (Simplex) o cubierta por líneas de asignación (Húngaro). | `255, 255, 170` | `#FFFFAA` |
+| **Rojo** | `🟥` | **Restricción o inviabilidad**. Celdas no factibles (Numérico) y celdas que restan θ (Costos Duales). | `255, 190, 190` | `#FFBEBE` |
+| **Azul** | `🟦` | **Región factible**. Polígono de soluciones válidas en el método Gráfico (con opacidad). | `120, 180, 255` | `#78B4FF` |
+
 ## Requisitos
 
 - JDK 17 o superior.
 - Apache Maven 3.9 o superior para compilar desde la línea de comandos.
 - NetBeans (opcional, recomendado para editar los formularios `.form`).
 
-La única dependencia declarada es `org.netbeans.external:AbsoluteLayout:RELEASE220`.
+Dependencias declaradas en el `pom.xml`:
+
+- `org.netbeans.external:AbsoluteLayout:RELEASE220`
+- `org.json:json:20240303` — persistencia del historial de cálculos.
+- `com.formdev:flatlaf:3.7.2` — interfaz visual moderna.
+
+Estas se descargan automáticamente al compilar con Maven, siempre que tengas conexión a internet en ese momento (si ves un error de resolución de dependencias, revisa tu conexión antes que nada).
 
 ## Ejecutar el proyecto
 
@@ -116,29 +141,66 @@ Para estos métodos, incluya todas las combinaciones de origen y destino en la f
 - El método Simplex Dual admite restricciones `<=`; para restricciones `>=` o `=`, use Big M.
 - Los archivos `SimplexExamples.txt` contienen casos de entrada de referencia.
 
-## Estructura principal
+## Estructura del proyecto
 
 ```text
-src/main/java/
-├── com/mycompany/problema/programacion/lineal/
-│   ├── PrincipalPage.java          # Interfaz y selección del método
-│   ├── MetodoSimplex.java
-│   ├── MetodoBigM.java
-│   ├── AlgoritmoDual.java
-│   ├── MetodoGrafico.java
-│   ├── MetodoNumerico.java
-│   ├── AlgoritmoHungaro.java
-│   ├── AlgoritmoCostosDuales.java
-│   ├── parser/                    # Análisis de expresiones y matrices
-│   └── modelo/                    # Representación de problemas y restricciones
-└── SimplexExamples.txt             # Ejemplos de uso
+src/
+├── main/
+│   ├── java/
+│   │   ├── com/mycompany/problema/programacion/lineal/
+│   │   │   ├── algoritmos/
+│   │   │   │   ├── Json_History.java
+│   │   │   │   └── MetodoPL.java
+│   │   │   │
+│   │   │   ├── modelo/
+│   │   │   │   ├── ProblemaPL.java
+│   │   │   │   ├── Restriccion.java
+│   │   │   │   └── TipoRestriccion.java
+│   │   │   │
+│   │   │   ├── parser/
+│   │   │   │   ├── ParserLP.java
+│   │   │   │   └── ParserTransporte.java
+│   │   │   │
+│   │   │   ├── AlgoritmoCostosDuales.java
+│   │   │   ├── AlgoritmoDual.java
+│   │   │   ├── AlgoritmoHungaro.java
+│   │   │   ├── MetodoBigM.java
+│   │   │   ├── MetodoGrafico.java
+│   │   │   ├── MetodoNumerico.java
+│   │   │   ├── MetodoSimplex.java
+│   │   │   ├── MultiCalculos.java
+│   │   │   ├── SeleccionMultiAlgoritmo.java
+│   │   │   ├── PrincipalPage.java
+│   │   │   ├── MenuHistorial.java
+│   │   │   ├── VentanaPrefs.java
+│   │   │   ├── VentanaDonacion.java
+│   │   │   ├── FondoMatematico.java
+│   │   │   ├── FondoAzulPlano.java
+│   │   │   └── Recursos.java
+│   │   │
+│   │   └── SimplexExamples.txt
+│   │
+│   └── resources/
+│       ├── vertex-logo.png
+│       ├── vertex-icon.png
+│       ├── vertex-icon-256.png
+│       └── vertex-icon.ico
+└──
 ```
 
 ## Estado del proyecto
 
 No se incluyen pruebas automatizadas ni una licencia explícita. Antes de reutilizar o distribuir el código, agregue una licencia adecuada y verifique los resultados con casos de prueba conocidos.
 
-## Notas
+## 💖 Ayúdame a avanzar
 
-La aplicación revisa automáticamente al abrirse si hay una versión más nueva disponible y te avisa con un enlace de descarga.
-La aplicación incluye un recordatorio de donación, con el botón 'Tal vez más tarde' este se ocultará por 15 días
+Vertex es un proyecto **totalmente gratuito** y cualquier apoyo me ayuda a seguir mejorándolo.
+
+Si te ha resultado útil, puedes ayudarme de dos maneras:
+
+* 💬 **Déjame un comentario** sobre Vertex a través de mi [portafolio personal](https://repositorio-aeop.onrender.com/).
+* ☕ **Invítame a un café** mediante una donación para apoyar el desarrollo del proyecto.
+
+Toda ayuda, comentario o sugerencia es bienvenida y me motiva a seguir trabajando en Vertex.
+
+**¡Muchas gracias por el apoyo! 💖**

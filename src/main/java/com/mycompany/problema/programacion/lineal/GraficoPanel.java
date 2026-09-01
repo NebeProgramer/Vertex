@@ -197,7 +197,10 @@ public class GraficoPanel extends JPanel {
             }
         }
 
-        // ---- puntos factibles (rojo) ----
+        // ---- puntos factibles, no óptimos (verde lima) ----
+        // Rojo queda reservado en todo el proyecto para "no factible"; un vértice
+        // factible pero no óptimo pasa a verde lima, en la misma familia que el
+        // óptimo (verde bosque) pero con tono/saturación distintos, no solo brillo.
         pantallaFactibles = new ArrayList<>();
         if (puntosFactibles != null) {
             for (double[] p : puntosFactibles) {
@@ -209,7 +212,7 @@ public class GraficoPanel extends JPanel {
                         && Math.abs(p[0] - optimo[0]) < 1e-6
                         && Math.abs(p[1] - optimo[1]) < 1e-6;
                 if (!esOptimo) {
-                    g2.setColor(new Color(220, 30, 30));
+                    g2.setColor(new Color(200, 230, 110));
                     g2.fillOval(px - 4, py - 4, 8, 8);
                     g2.setColor(Color.DARK_GRAY);
                     g2.drawOval(px - 4, py - 4, 8, 8);
@@ -217,11 +220,11 @@ public class GraficoPanel extends JPanel {
             }
         }
 
-        // ---- punto óptimo (verde) ----
+        // ---- punto óptimo (verde bosque) ----
         if (optimo != null) {
             int px = margen + (int) (optimo[0] / maxX * plotW);
             int py = h - margen - (int) (optimo[1] / maxY * plotH);
-            g2.setColor(new Color(30, 160, 60));
+            g2.setColor(new Color(40, 150, 70));
             g2.fillOval(px - 6, py - 6, 12, 12);
             g2.setColor(Color.BLACK);
             g2.drawOval(px - 6, py - 6, 12, 12);

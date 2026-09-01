@@ -73,6 +73,10 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
     public AlgoritmoDual() {
         initComponents();
         Recursos.aplicarIcono(this);
+        VentanaPrefs.aplicar(this);
+        Recursos.instalarAyudaEnBarraTitulo(this, "<html><b>Colorimetría — Simplex Dual</b><br>&#128992; Naranja: celda pivote<br>&#128993; Amarillo: fila y columna del pivote<br>&#128994; Verde: números afectados por el cambio de variable</html>");
+        Recursos.envolverEnFondoAzul(this);
+        Recursos.modernizarVentana(this);
         instalarRendererColores(TablaTableau);
     }
 
@@ -113,7 +117,8 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
         setTitle("Simplex Dual");
         setBackground(new java.awt.Color(255, 255, 255));
         setPreferredSize(new java.awt.Dimension(712, 460));
-        setResizable(false);
+        setMinimumSize(new java.awt.Dimension(712, 460));
+        setResizable(true);
 
         TablaTableau.setFont(new java.awt.Font("Consolas", 0, 13)); // NOI18N
         TablaTableau.setEnabled(false);
@@ -171,7 +176,7 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
                     .addComponent(lblPaso)
                     .addComponent(btnSiguiente))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 260, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 260, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 153, Short.MAX_VALUE)
                 .addContainerGap())
@@ -195,16 +200,7 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
     }//GEN-LAST:event_btnSiguienteActionPerformed
 
     public static void main(String args[]) {
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(AlgoritmoDual.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
+        com.formdev.flatlaf.FlatLightLaf.setup();
 
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
