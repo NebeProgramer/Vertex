@@ -150,7 +150,6 @@ Restricciones:
 x11+x12+x13=1
 x21+x22+x23=1
 x31+x32+x33=1
-
 x11+x21+x31=1
 x12+x22+x32=1
 x13+x23+x33=1
@@ -194,3 +193,5 @@ x1
 Vertex interpretará automáticamente el coeficiente 1.
 
 ===========================================================
+
+Agregar función de Historial y multiselección de algoritmos, cambiar el fondo a uno más representativo, activar redimencionalidad, colometria y mejorar colores

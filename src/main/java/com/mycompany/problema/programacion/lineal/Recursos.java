@@ -107,6 +107,10 @@ public final class Recursos {
         boton.putClientProperty("JButton.buttonType", "toolBarButton");
         boton.setFocusable(false);
         boton.setToolTipText(contenidoAyudaHtml);
+        // sin esto, el botón hereda el color por defecto de FlatLaf para
+        // toolBarButton, que en la barra de título (blanca) queda
+        // prácticamente invisible (texto claro sobre fondo blanco)
+        boton.setForeground(java.awt.Color.BLACK);
 
         javax.swing.JMenuBar barra = new javax.swing.JMenuBar();
         barra.add(javax.swing.Box.createHorizontalGlue());

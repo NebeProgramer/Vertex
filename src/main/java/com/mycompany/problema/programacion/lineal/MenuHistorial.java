@@ -183,6 +183,17 @@ public class MenuHistorial {
                 }
                 return detalleCompleto(modelo.get(idx));
             }
+
+            @Override
+            public javax.swing.JToolTip createToolTip() {
+                // mismo problema que el popup de "Eliminar": el tooltip es una
+                // ventana flotante aparte, no parte de boton/panel/lista, así
+                // que sin esto, mover el mouse hacia el tooltip para leerlo
+                // cuenta como "salir" y cierra el menú solo.
+                javax.swing.JToolTip tip = super.createToolTip();
+                instalarHover(tip);
+                return tip;
+            }
         };
         l.setCellRenderer(new RendererHistorial());
         l.setFixedCellHeight(40);

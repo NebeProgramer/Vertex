@@ -41,8 +41,11 @@ public class SubIndiceTextPane extends JTextPane {
         StyleConstants.setFontSize(subindice, tamSub);
         StyleConstants.setSubscript(subindice, true);
 
-        setToolTipText("<html>Escribe coeficiente + x + subíndice, ej: <b>2x11 + 3x2</b>.<br>"
-                + "El número que sigue a la x se verá en tamaño pequeño automáticamente.</html>");
+        // El tooltip genérico de este campo se quitó: ObjetiveFunction y
+        // Restrictions (los dos únicos usos de esta clase) ya tienen su
+        // propio tooltip específico en el "(?)" de su label — tenerlo acá
+        // también hacía que apareciera al pasar el mouse por el input, que
+        // es justo la interrupción que el "(?)" buscaba evitar.
 
         getDocument().addDocumentListener(new DocumentListener() {
             @Override
