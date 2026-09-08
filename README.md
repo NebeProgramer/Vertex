@@ -32,9 +32,9 @@ También puedes buscar el `.zip` de cada versión en la sección [Releases](http
 - Menú de historial para guardar, editar y eliminar tus cálculos más recientes.
 - Multicálculo: ventana unificadora de todos los cálculos, para que puedas ver la solución de un problema de todas las maneras que elijas.
 - Compatibilidad: evita la selección de métodos incompatibles con la estructura del problema actual.
-- Historial:
-- Multicalculo 
     Ejemplo: si el problema no tiene exactamente dos variables, el método Gráfico queda deshabilitado automáticamente.
+- Historial:
+- Multicalculo  
 - Revisión automática de nuevas versiones al abrir la aplicación, con un enlace de descarga si hay una disponible.
 - Recordatorio de donación opcional: con el botón "Tal vez más tarde" se oculta por 15 días.
 
