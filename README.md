@@ -33,8 +33,8 @@ También puedes buscar el `.zip` de cada versión en la sección [Releases](http
 - Multicálculo: ventana unificadora de todos los cálculos, para que puedas ver la solución de un problema de todas las maneras que elijas.
 - Compatibilidad: evita la selección de métodos incompatibles con la estructura del problema actual.
     Ejemplo: si el problema no tiene exactamente dos variables, el método Gráfico queda deshabilitado automáticamente.
-- Historial:
-- Multicalculo  
+- Historial: Recupera cálculos con facilidad para poder calcular en cualquier momento.
+- Multicalculo: Calcula en más de un método a la vez para analizar un problema con varias perspectivas
 - Revisión automática de nuevas versiones al abrir la aplicación, con un enlace de descarga si hay una disponible.
 - Recordatorio de donación opcional: con el botón "Tal vez más tarde" se oculta por 15 días.
 
