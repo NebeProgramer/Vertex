@@ -143,13 +143,20 @@ public class SeleccionMultiAlgoritmo {
     }
 
     private void actualizarResumen() {
-        String resumen;
+        String resumen = "";
         if (ordenSeleccion.isEmpty()) {
             resumen = "Decide por mi";
         } else if (ordenSeleccion.size() == 1) {
             resumen = ordenSeleccion.get(0);
         } else {
-            resumen = ordenSeleccion.size() + " algoritmos seleccionados";
+            for(int i = 0; i < ordenSeleccion.size();i++){
+                if(i == 0){
+                    resumen += ordenSeleccion.get(i);
+                }else{
+                    resumen += "; " + ordenSeleccion.get(i);
+                }
+                
+            }
         }
         selector.setText(resumen);
     }
