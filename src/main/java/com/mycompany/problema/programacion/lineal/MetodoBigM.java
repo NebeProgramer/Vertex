@@ -71,7 +71,9 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
         initComponents();
         Recursos.aplicarIcono(this);
         VentanaPrefs.aplicar(this);
-        Recursos.instalarAyudaEnBarraTitulo(this, "<html><b>Colorimetría — Big M</b><br>&#128992; Naranja: celda pivote<br>&#128993; Amarillo: fila y columna del pivote<br>&#128994; Verde: números afectados por el cambio de variable</html>");
+        Recursos.instalarAyudaEnBarraTitulo(this, "Big M",
+                "<html><b>Colorimetría — Big M</b><br>&#128992; Naranja: celda pivote<br>&#128993; Amarillo: fila y columna del pivote<br>&#128994; Verde: números afectados por el cambio de variable</html>",
+                VentanaAyudaAlgoritmo.TEORIA_BIGM);
         Recursos.envolverEnFondoAzul(this);
         Recursos.modernizarVentana(this);
         instalarRendererColores(TablaTableau);

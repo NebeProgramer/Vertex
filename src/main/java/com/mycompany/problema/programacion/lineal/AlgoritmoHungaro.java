@@ -54,7 +54,9 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
         initComponents();
         Recursos.aplicarIcono(this);
         VentanaPrefs.aplicar(this);
-        Recursos.instalarAyudaEnBarraTitulo(this, "<html><b>Colorimetría — Húngaro</b><br>&#128994; Verde: celdas con valor 0<br>&#128993; Amarillo: filas/columnas seleccionadas para cubrir los 0<br>&#128992; Naranja: número causante (se resta/suma)</html>");
+        Recursos.instalarAyudaEnBarraTitulo(this, "Algoritmo Húngaro",
+                "<html><b>Colorimetría — Húngaro</b><br>&#128994; Verde: celdas con valor 0<br>&#128993; Amarillo: filas/columnas seleccionadas para cubrir los 0<br>&#128992; Naranja: número causante (se resta/suma)</html>",
+                VentanaAyudaAlgoritmo.TEORIA_HUNGARO);
         Recursos.envolverEnFondoAzul(this);
         Recursos.modernizarVentana(this);
         instalarRendererColores(TablaTableau);

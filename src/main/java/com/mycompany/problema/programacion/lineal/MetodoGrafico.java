@@ -36,7 +36,9 @@ public class MetodoGrafico extends javax.swing.JFrame implements MetodoPL {
         initComponents();
         Recursos.aplicarIcono(this);
         VentanaPrefs.aplicar(this);
-        Recursos.instalarAyudaEnBarraTitulo(this, "<html><b>Colorimetría — Gráfico</b><br>&#127811; Verde lima: vértice factible, no óptimo<br>&#127795; Verde bosque: vértice óptimo<br>&#128309; Azul: región factible</html>");
+        Recursos.instalarAyudaEnBarraTitulo(this, "Método Gráfico",
+                "<html><b>Colorimetría — Gráfico</b><br>&#127811; Verde lima: vértice factible, no óptimo<br>&#127795; Verde bosque: vértice óptimo<br>&#128309; Azul: región factible</html>",
+                VentanaAyudaAlgoritmo.TEORIA_GRAFICO);
         Recursos.envolverEnFondoAzul(this);
         Recursos.modernizarVentana(this);
     }

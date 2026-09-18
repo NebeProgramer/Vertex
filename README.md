@@ -1,6 +1,6 @@
 # Vertex — Solucionador de Programación Lineal
 
-Aplicación de escritorio en Java para modelar y resolver problemas de optimización lineal. Vertex permite escribir una función objetivo y sus restricciones, seleccionar un método de solución o dejar que la aplicación recomiende uno de acuerdo con la estructura del problema.
+Aplicación de escritorio en Java para modelar y resolver problemas de optimización lineal. Vertex permite escribir una función objetivo y sus restricciones, seleccionar un método de solución o dejar que la aplicación recomiende uno de acuerdo con la estructura del problema — y entender, paso a paso, por qué llegó a esa respuesta.
 
 <p align="center">
   <img src="/src/main/resources/vertex-logo.png" alt="Logo de Vertex" width="180">
@@ -8,28 +8,34 @@ Aplicación de escritorio en Java para modelar y resolver problemas de optimizac
 
 ## Descarga
 
-No hace falta compilar nada para usar Vertex: solo necesitas tener **Java 17 o superior** instalado (JRE es suficiente).
+No hace falta compilar nada para usar Vertex: solo necesitas tener **Java 17 o superior** instalado (JRE es suficiente). Elige la forma que prefieras:
 
-**[⬇ Descargar la última versión](https://github.com/NebeProgramer/Vertex/releases/latest/download/Vertex.zip)**
+| | Instalador (recomendado) | Portátil |
+| --- | --- | --- |
+| Descarga | **[⬇ VertexSetup.msi](https://github.com/NebeProgramer/Vertex/releases/latest/download/VertexSetup.msi)** | **[⬇ Vertex.zip](https://github.com/NebeProgramer/Vertex/releases/latest/download/Vertex.zip)** |
+| Cómo se usa | Ejecuta el `.msi`, elige dónde instalarlo y listo: queda con acceso directo en el menú de inicio. | Descomprime el `.zip` y ejecuta `Vertex.jar` (doble clic o `java -jar Vertex.jar`). |
+| Ventaja | Se desinstala desde el Panel de Control como cualquier programa de Windows. | No requiere permisos de administrador ni instalación. |
 
-También puedes buscar el `.zip` de cada versión en la sección [Releases](https://github.com/NebeProgramer/Vertex/releases) de este repositorio.
+También puedes buscar el instalador o el `.zip` de cualquier versión anterior en la sección [Releases](https://github.com/NebeProgramer/Vertex/releases) de este repositorio.
 
-1. Descarga y descomprime `Vertex.zip`.
-2. Ejecuta `Vertex.jar` con doble clic, o desde una terminal:
+> 🆕 Vertex revisa automáticamente si hay una versión más nueva cada vez que abres la aplicación, y te avisa con un enlace de descarga si la hay.
 
-   ```bash
-   java -jar Vertex.jar
-   ```
+## Novedades
+
+La versión actual es **1.3.1**: cada ventana de resultados (Simplex, Big M, Simplex Dual, Costos Duales, Gráfico, Húngaro y Numérico) tiene ahora un botón **(?)** clicable en su barra de título que abre una guía teórica completa del método — fundamento matemático, el ciclo del algoritmo paso a paso y un ejemplo resuelto — además de recordar la colorimetría de esa ventana.
+
+El historial completo de cambios, versión por versión, está en [`docs/release-notes`](docs/release-notes).
 
 ## Funcionalidades
 
 - Optimización de problemas de **maximización** y **minimización**.
 - Validación de la sintaxis de las expresiones y de las restricciones.
 - Visualización de tablas y pasos intermedios de los algoritmos, indicando en cada paso si la solución es factible y si ya es óptima.
+- Ayuda teórica por algoritmo: cada ventana de resultados tiene un botón **(?)** que explica cómo funciona el método (fundamento, pasos y un ejemplo resuelto), además de recordar el significado de los colores usados en esa ventana.
 - Gráfica de las restricciones, región factible y solución óptima cuando el problema tiene dos variables, con todos los puntos de intersección factibles marcados y un cuadro flotante con sus valores al pasar el mouse sobre ellos.
 - Formato visual de subíndices para variables como `x1`, `x2` o `x11`.
 - Interfaz moderna con tema personalizado (FlatLaf), incluyendo un menú de historial deslizante.
-- Menú de historial para guardar, editar y eliminar tus cálculos más recientes.
+- Menú de historial para guardar, editar y eliminar tus cálculos más recientes — se conserva entre instalaciones y actualizaciones.
 - Multicálculo: ventana unificadora de todos los cálculos, para que puedas ver la solución de un problema de todas las maneras que elijas.
 - Compatibilidad: evita la selección de métodos incompatibles con la estructura del problema actual.
     Ejemplo: si el problema no tiene exactamente dos variables, el método Gráfico queda deshabilitado automáticamente.
@@ -48,7 +54,7 @@ También puedes buscar el `.zip` de cada versión en la sección [Releases](http
 | Húngaro | Problemas de asignación con matriz de costos cuadrada. |
 | Costos Duales (MODI) | Problemas de transporte; usa Vogel para la solución inicial y MODI para optimizarla. |
 
-La opción **“Decide por mí”** analiza la estructura de entrada y elige entre los métodos disponibles. Para transporte desbalanceado, el método de Costos Duales agrega una fila o columna ficticia de costo cero.
+La opción **“Decide por mí”** analiza la estructura de entrada y elige entre los métodos disponibles. Para transporte desbalanceado, el método de Costos Duales agrega una fila o columna ficticia de costo cero. En cualquiera de las 7 ventanas de resultados, el botón **(?)** de la barra de título explica el método correspondiente con el mismo nivel de detalle que una clase de investigación de operaciones.
 
 ## Colorimetría
 
@@ -64,11 +70,14 @@ A continuación se especifica una tabla con los colores usados y su significado 
 | **Rojo** | `🟥` | **Restricción o inviabilidad**. Celdas no factibles (Numérico) y celdas que restan θ (Costos Duales). | `255, 190, 190` | `#FFBEBE` |
 | **Azul** | `🟦` | **Región factible**. Polígono de soluciones válidas en el método Gráfico (con opacidad). | `120, 180, 255` | `#78B4FF` |
 
+Esta misma tabla, junto con el resto de la teoría de cada algoritmo, está disponible dentro de la aplicación desde el botón **(?)** de cada ventana de resultados.
+
 ## Requisitos
 
 - JDK 17 o superior.
 - Apache Maven 3.9 o superior para compilar desde la línea de comandos.
 - NetBeans (opcional, recomendado para editar los formularios `.form`).
+- WiX Toolset v3.14 (opcional, solo para generar el instalador `.msi` localmente — ver [Generar el instalador](#generar-el-instalador)).
 
 Dependencias declaradas en el `pom.xml`:
 
@@ -95,6 +104,16 @@ java -jar target/Vertex.jar
 El comando `mvn clean package` genera un único JAR ejecutable en `target/Vertex.jar`, con todas las dependencias incluidas. La clase de inicio es `com.mycompany.problema.programacion.lineal.ProblemaProgramacionLineal`.
 
 > La carpeta `target/` no está incluida en este repositorio (se genera al compilar). Si solo quieres usar la aplicación sin compilarla, ve a la sección [Descarga](#descarga).
+
+### Generar el instalador
+
+El `.msi` de las releases se genera con [jpackage](https://openjdk.org/jeps/392), en un profile de Maven aparte para no exigirle WiX Toolset a quien solo quiere compilar el jar:
+
+```bash
+mvn clean package -P instalador
+```
+
+Requiere tener [WiX Toolset v3.14](https://wixtoolset.org/) instalado y en el `PATH` de Windows. El instalador queda en `target/installer/`.
 
 ## Formato de entrada
 
@@ -168,12 +187,17 @@ src/
 │   │   │   ├── MetodoGrafico.java
 │   │   │   ├── MetodoNumerico.java
 │   │   │   ├── MetodoSimplex.java
+│   │   │   ├── VentanaAyudaAlgoritmo.java
+│   │   │   ├── GraficoPanel.java
+│   │   │   ├── SubIndiceTextPane.java
 │   │   │   ├── MultiCalculos.java
 │   │   │   ├── SeleccionMultiAlgoritmo.java
 │   │   │   ├── PrincipalPage.java
+│   │   │   ├── ProblemaProgramacionLineal.java
 │   │   │   ├── MenuHistorial.java
 │   │   │   ├── VentanaPrefs.java
 │   │   │   ├── VentanaDonacion.java
+│   │   │   ├── ActualizacionChecker.java
 │   │   │   ├── FondoMatematico.java
 │   │   │   ├── FondoAzulPlano.java
 │   │   │   └── Recursos.java
@@ -187,6 +211,8 @@ src/
 │       └── vertex-icon.ico
 └──
 ```
+
+Las notas de cada versión, con el detalle de qué cambió y por qué, viven en [`docs/release-notes`](docs/release-notes).
 
 ## Estado del proyecto
 

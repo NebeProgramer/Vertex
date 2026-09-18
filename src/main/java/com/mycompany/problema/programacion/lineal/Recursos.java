@@ -97,12 +97,20 @@ public final class Recursos {
      * decoraciones de ventana de FlatLaf). Al pasar el mouse por encima
      * muestra {@code contenidoAyudaHtml} como tooltip — igual que el patrón
      * ya usado en SubIndiceTextPane para los inputs de Z/restricciones, así
-     * que el usuario que ya sabe qué significa cada color nunca lo ve.
+     * que el usuario que ya sabe qué significa cada color nunca lo ve. Al
+     * hacer clic, abre una subventana (ver {@link VentanaAyudaAlgoritmo})
+     * con esa misma colorimetría y una explicación teórica básica de cómo
+     * funciona el algoritmo de esa ventana.
      *
-     * @param ventana           la JFrame donde se instala la barra
-     * @param contenidoAyudaHtml texto ya envuelto en {@code <html>...</html>}
+     * @param ventana            la JFrame donde se instala la barra
+     * @param tituloAlgoritmo    nombre corto del algoritmo (p. ej. "Simplex"),
+     *                           usado como título de la subventana de ayuda
+     * @param contenidoAyudaHtml colorimetría, ya envuelta en {@code <html>...</html>}
+     * @param teoriaHtml         explicación teórica del algoritmo, como fragmento HTML
+     *                           (sin las etiquetas {@code <html>}/{@code <body>})
      */
-    public static void instalarAyudaEnBarraTitulo(javax.swing.JFrame ventana, String contenidoAyudaHtml) {
+    public static void instalarAyudaEnBarraTitulo(javax.swing.JFrame ventana, String tituloAlgoritmo,
+            String contenidoAyudaHtml, String teoriaHtml) {
         javax.swing.JButton boton = new javax.swing.JButton("(?)");
         boton.putClientProperty("JButton.buttonType", "toolBarButton");
         boton.setFocusable(false);
@@ -111,6 +119,9 @@ public final class Recursos {
         // toolBarButton, que en la barra de título (blanca) queda
         // prácticamente invisible (texto claro sobre fondo blanco)
         boton.setForeground(java.awt.Color.BLACK);
+        boton.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+        boton.addActionListener(evt
+                -> new VentanaAyudaAlgoritmo(ventana, tituloAlgoritmo, contenidoAyudaHtml, teoriaHtml).setVisible(true));
 
         javax.swing.JMenuBar barra = new javax.swing.JMenuBar();
         barra.add(javax.swing.Box.createHorizontalGlue());
