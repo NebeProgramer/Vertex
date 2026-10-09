@@ -216,7 +216,11 @@ Las notas de cada versión, con el detalle de qué cambió y por qué, viven en 
 
 ## Estado del proyecto
 
-No se incluyen pruebas automatizadas ni una licencia explícita. Antes de reutilizar o distribuir el código, agregue una licencia adecuada y verifique los resultados con casos de prueba conocidos.
+No se incluyen pruebas automatizadas, por lo que conviene verificar los resultados con casos de prueba conocidos.
+
+## Licencia
+
+Vertex se distribuye bajo la licencia [Apache 2.0](LICENSE). Puedes usarlo, modificarlo y distribuirlo, conservando el aviso de autoría (© 2026 Anderson Ernesto Osorio Patiño) y el texto de la licencia.
 
 ## 💖 Ayúdame a avanzar
 
