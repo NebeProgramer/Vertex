@@ -36,7 +36,52 @@ import java.util.List;
  */
 public class Json_History {
 
-    private static final Path HISTORY_PATH = Paths.get("history.json");
+    private static final Path HISTORY_PATH = obtenerRutaHistorial();
+
+    /**
+     * Carpeta de datos del usuario, fuera de donde se instalan los binarios,
+     * para que reinstalar o reemplazar los archivos de Vertex no borre el
+     * historial. En Windows es %APPDATA%\Vertex.
+     */
+    private static Path obtenerCarpetaDatos() {
+        String os = System.getProperty("os.name").toLowerCase();
+        String home = System.getProperty("user.home");
+
+        if (os.contains("win")) {
+            String appData = System.getenv("APPDATA");
+            return Paths.get(appData != null ? appData : home, "Vertex");
+        } else if (os.contains("mac")) {
+            return Paths.get(home, "Library", "Application Support", "Vertex");
+        } else {
+            return Paths.get(home, ".config", "Vertex");
+        }
+    }
+
+    private static Path obtenerRutaHistorial() {
+        Path carpetaDatos = obtenerCarpetaDatos();
+        try {
+            Files.createDirectories(carpetaDatos);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Path rutaNueva = carpetaDatos.resolve("history.json");
+
+        // Migración de una sola vez: si venías de una versión anterior que
+        // guardaba history.json junto al jar (carpeta de trabajo), y todavía
+        // no hay nada en la carpeta nueva, se copia para no perder ese
+        // historial previo.
+        Path rutaVieja = Paths.get("history.json");
+        try {
+            if (!Files.exists(rutaNueva) && Files.exists(rutaVieja)) {
+                Files.copy(rutaVieja, rutaNueva, StandardCopyOption.COPY_ATTRIBUTES);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return rutaNueva;
+    }
 
     public static String generarIdHex(int longitud) {
         SecureRandom random = new SecureRandom();
