@@ -22,9 +22,13 @@ public class SeleccionMultiAlgoritmo {
         "Grafico", "Numerico", "Simplex", "Big M", "Simplex Dual", "Costos Dual", "Hungaro"
     };
 
-    /** Decide si un algoritmo puede convivir con la selección actual. */
+    /**
+     * Decide si un algoritmo puede convivir con el problema escrito y con la
+     * selección actual. Devuelve null si es compatible, o el motivo (se
+     * muestra como tooltip de la casilla deshabilitada).
+     */
     public interface Compatibilidad {
-        boolean esCompatible(String nombreAlgoritmo, List<String> seleccionados);
+        String motivoIncompatible(String nombreAlgoritmo, List<String> seleccionados);
     }
 
     private final JComboBox<String> comboOriginal;
@@ -132,14 +136,32 @@ public class SeleccionMultiAlgoritmo {
         if (nombre == null || nombre.isEmpty() || "Decide por mi".equals(nombre)) {
             return;
         }
-        JCheckBox check = checks.get(nombre);
-        if (check != null && compatibilidad.esCompatible(nombre, ordenSeleccion)) {
-            check.setSelected(true);
-            ordenSeleccion.add(nombre);
-            decidirAutomaticamente.setSelected(false);
-            cambiarCombo(nombre);
-            actualizarResumen();
+        seleccionarVarios(java.util.Collections.singletonList(nombre));
+    }
+
+    /**
+     * Restaura una selección completa (p. ej. todos los "Metodos" de un
+     * elemento del historial). Los que no sean compatibles con el problema
+     * ya cargado en Z/restricciones se omiten. Lista vacía = "Decide por mi".
+     */
+    public void seleccionarVarios(List<String> nombres) {
+        limpiarSeleccion();
+        if (nombres != null) {
+            for (String nombre : nombres) {
+                JCheckBox check = checks.get(nombre);
+                if (check != null && !ordenSeleccion.contains(nombre)
+                        && compatibilidad.motivoIncompatible(nombre, ordenSeleccion) == null) {
+                    check.setSelected(true);
+                    ordenSeleccion.add(nombre);
+                }
+            }
         }
+        decidirAutomaticamente.setSelected(ordenSeleccion.isEmpty());
+        if (ordenSeleccion.size() == 1) {
+            cambiarCombo(ordenSeleccion.get(0));
+        }
+        actualizarResumen();
+        recalcularCompatibilidad();
     }
 
     private void actualizarResumen() {
@@ -168,6 +190,8 @@ public class SeleccionMultiAlgoritmo {
     }
 
     private void abrirPopup() {
+        // El texto pudo cambiar sin teclado (historial, pegar con el mouse...)
+        recalcularCompatibilidad();
         int ancho = selector.getWidth();
         int alto = popup.getPreferredSize().height;
         popup.setPopupSize(ancho, alto);
@@ -178,9 +202,9 @@ public class SeleccionMultiAlgoritmo {
      * Habilita/deshabilita cada casilla según su propia función de
      * compatibilidad contra la Z/restricciones actuales (las mismas
      * check*() que ya usa el modo manual de un solo algoritmo). Un
-     * algoritmo ya marcado nunca se deshabilita a sí mismo por esto; si
-     * deja de ser compatible (porque el usuario editó Z/restricciones) se
-     * desmarca automáticamente. Se puede llamar desde afuera para
+     * algoritmo marcado se evalúa contra los demás marcados (no contra sí
+     * mismo); si deja de ser compatible (porque el usuario editó
+     * Z/restricciones) se desmarca automáticamente. Se puede llamar desde afuera para
      * refrescar en vivo mientras el usuario escribe.
      */
     public void recalcularCompatibilidad() {
@@ -188,9 +212,12 @@ public class SeleccionMultiAlgoritmo {
         for (Map.Entry<String, JCheckBox> entry : checks.entrySet()) {
             String nombre = entry.getKey();
             JCheckBox cb = entry.getValue();
-            boolean yaMarcado = ordenSeleccion.contains(nombre);
-            boolean habilitado = yaMarcado || compatibilidad.esCompatible(nombre, ordenSeleccion);
+            List<String> otros = new LinkedList<>(ordenSeleccion);
+            otros.remove(nombre);
+            String motivo = compatibilidad.motivoIncompatible(nombre, otros);
+            boolean habilitado = motivo == null;
             cb.setEnabled(habilitado);
+            cb.setToolTipText(motivo);
             if (!habilitado && cb.isSelected()) {
                 cb.setSelected(false);
                 ordenSeleccion.remove(nombre);

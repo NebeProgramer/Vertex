@@ -1,0 +1,9 @@
+Vertex — Solucionador de Programación Lineal
+Copyright 2026 Anderson Ernesto Osorio Patiño
+
+Este producto se distribuye bajo la licencia Apache, versión 2.0 (ver LICENSE).
+
+Incluye software de terceros:
+- FlatLaf (https://www.formdev.com/flatlaf/), licencia Apache 2.0.
+- JSON-Java / org.json (https://github.com/stleary/JSON-java), dominio público.
+- NetBeans AbsoluteLayout (https://netbeans.apache.org/), licencia Apache 2.0.

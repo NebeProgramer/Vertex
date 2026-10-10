@@ -16,14 +16,18 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.event.HyperlinkEvent;
 
 public class ActualizacionChecker {
 
@@ -303,12 +307,21 @@ public class ActualizacionChecker {
     private static boolean mostrarDetalle(Window padre, String versionNueva, String descripcion) {
         JDialog detalle = new JDialog(padre, "Novedades de la versión " + versionNueva, Dialog.ModalityType.APPLICATION_MODAL);
 
-        JTextArea texto = new JTextArea(descripcion);
+        JEditorPane texto = new JEditorPane();
+        texto.setContentType("text/html");
         texto.setEditable(false);
-        texto.setLineWrap(true);
-        texto.setWrapStyleWord(true);
-        texto.setMargin(new java.awt.Insets(10, 10, 10, 10));
+        texto.setText(markdownAHtml(descripcion));
         texto.setCaretPosition(0);
+        texto.setMargin(new java.awt.Insets(10, 10, 10, 10));
+        texto.addHyperlinkListener(e -> {
+            if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                try {
+                    Desktop.getDesktop().browse(e.getURL().toURI());
+                } catch (Exception ex) {
+                    // No se pudo abrir el navegador; no hay mucho más que hacer.
+                }
+            }
+        });
 
         JScrollPane scroll = new JScrollPane(texto);
         scroll.setPreferredSize(new Dimension(420, 320));
@@ -338,6 +351,143 @@ public class ActualizacionChecker {
         detalle.setVisible(true); // modal: bloquea aquí hasta que se llame dispose()
 
         return resultado[0];
+    }
+
+    private static final Pattern MD_HEADER = Pattern.compile("^(#{1,6})\\s+(.*)$");
+    private static final Pattern MD_UL = Pattern.compile("^\\s{0,3}[-*+]\\s+(.*)$");
+    private static final Pattern MD_OL = Pattern.compile("^\\s{0,3}\\d+\\.\\s+(.*)$");
+    private static final Pattern MD_HR = Pattern.compile("^([-*_])\\1{2,}$");
+    private static final Pattern MD_CODE = Pattern.compile("`([^`]+)`");
+    private static final Pattern MD_LINK = Pattern.compile("\\[([^\\]]+)]\\(([^)]+)\\)");
+    private static final Pattern MD_BOLD_AST = Pattern.compile("\\*\\*([^*]+)\\*\\*");
+    private static final Pattern MD_BOLD_US = Pattern.compile("__([^_]+)__");
+    private static final Pattern MD_ITALIC_AST = Pattern.compile("\\*([^*]+)\\*");
+    private static final Pattern MD_ITALIC_US = Pattern.compile("(?<![A-Za-z0-9])_([^_]+)_(?![A-Za-z0-9])");
+
+    /**
+     * Convierte el Markdown básico que trae el "body" de un release de GitHub
+     * (encabezados, listas, negrita/cursiva, código en línea, bloques de
+     * código, enlaces y líneas horizontales) a HTML apto para un JEditorPane.
+     * No es un parser Markdown completo: cubre lo que GitHub suele generar
+     * en release notes, no casos raros como tablas o blockquotes anidados.
+     */
+    private static String markdownAHtml(String md) {
+        java.awt.Font fuenteBase = UIManager.getFont("Label.font");
+        String familiaFuente = (fuenteBase != null) ? fuenteBase.getFamily() : "SansSerif";
+        int tamanoFuente = (fuenteBase != null) ? fuenteBase.getSize() : 12;
+
+        String[] lineas = escapeHtml(md).replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
+
+        StringBuilder html = new StringBuilder();
+        html.append("<html><head><style>")
+                .append("body{font-family:'").append(familiaFuente).append("';font-size:").append(tamanoFuente).append("pt;}")
+                .append("h1,h2,h3,h4,h5,h6{margin-top:10px;margin-bottom:4px;}")
+                .append("code{font-family:monospace;background-color:#e8e8e8;}")
+                .append("pre{font-family:monospace;background-color:#e8e8e8;padding:6px;}")
+                .append("</style></head><body>");
+
+        boolean enCodigo = false;
+        boolean parrafoAbierto = false;
+        String listaAbierta = null;
+
+        for (String linea : lineas) {
+            String trim = linea.trim();
+
+            if (trim.startsWith("```")) {
+                if (parrafoAbierto) { html.append("</p>"); parrafoAbierto = false; }
+                if (listaAbierta != null) { html.append("</").append(listaAbierta).append('>'); listaAbierta = null; }
+                html.append(enCodigo ? "</pre>" : "<pre>");
+                enCodigo = !enCodigo;
+                continue;
+            }
+            if (enCodigo) {
+                html.append(linea).append('\n');
+                continue;
+            }
+            if (trim.isEmpty()) {
+                if (parrafoAbierto) { html.append("</p>"); parrafoAbierto = false; }
+                if (listaAbierta != null) { html.append("</").append(listaAbierta).append('>'); listaAbierta = null; }
+                continue;
+            }
+            if (MD_HR.matcher(trim).matches()) {
+                if (parrafoAbierto) { html.append("</p>"); parrafoAbierto = false; }
+                if (listaAbierta != null) { html.append("</").append(listaAbierta).append('>'); listaAbierta = null; }
+                html.append("<hr>");
+                continue;
+            }
+            Matcher mHeader = MD_HEADER.matcher(trim);
+            if (mHeader.matches()) {
+                if (parrafoAbierto) { html.append("</p>"); parrafoAbierto = false; }
+                if (listaAbierta != null) { html.append("</").append(listaAbierta).append('>'); listaAbierta = null; }
+                int nivel = mHeader.group(1).length();
+                html.append("<h").append(nivel).append('>')
+                        .append(formatearInline(mHeader.group(2)))
+                        .append("</h").append(nivel).append('>');
+                continue;
+            }
+            Matcher mUl = MD_UL.matcher(linea);
+            Matcher mOl = MD_OL.matcher(linea);
+            if (mUl.matches() || mOl.matches()) {
+                if (parrafoAbierto) { html.append("</p>"); parrafoAbierto = false; }
+                String tipo = mUl.matches() ? "ul" : "ol";
+                String contenido = mUl.matches() ? mUl.group(1) : mOl.group(1);
+                if (!tipo.equals(listaAbierta)) {
+                    if (listaAbierta != null) { html.append("</").append(listaAbierta).append('>'); }
+                    html.append('<').append(tipo).append('>');
+                    listaAbierta = tipo;
+                }
+                html.append("<li>").append(formatearInline(contenido)).append("</li>");
+                continue;
+            }
+
+            if (listaAbierta != null) { html.append("</").append(listaAbierta).append('>'); listaAbierta = null; }
+            if (!parrafoAbierto) {
+                html.append("<p>");
+                parrafoAbierto = true;
+            } else {
+                html.append("<br>");
+            }
+            html.append(formatearInline(linea));
+        }
+        if (parrafoAbierto) { html.append("</p>"); }
+        if (listaAbierta != null) { html.append("</").append(listaAbierta).append('>'); }
+        if (enCodigo) { html.append("</pre>"); }
+
+        html.append("</body></html>");
+        return html.toString();
+    }
+
+    /** Aplica negrita, cursiva, código en línea y enlaces dentro de una línea ya escapada en HTML. */
+    private static String formatearInline(String texto) {
+        String r = envolverGrupo1(texto, MD_CODE, "<code>", "</code>");
+        r = convertirLinks(r);
+        r = envolverGrupo1(r, MD_BOLD_AST, "<b>", "</b>");
+        r = envolverGrupo1(r, MD_BOLD_US, "<b>", "</b>");
+        r = envolverGrupo1(r, MD_ITALIC_AST, "<i>", "</i>");
+        r = envolverGrupo1(r, MD_ITALIC_US, "<i>", "</i>");
+        return r;
+    }
+
+    private static String envolverGrupo1(String texto, Pattern patron, String tagAbre, String tagCierra) {
+        Matcher m = patron.matcher(texto);
+        StringBuilder sb = new StringBuilder();
+        while (m.find()) {
+            m.appendReplacement(sb, Matcher.quoteReplacement(tagAbre + m.group(1) + tagCierra));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+    private static String convertirLinks(String texto) {
+        Matcher m = MD_LINK.matcher(texto);
+        StringBuilder sb = new StringBuilder();
+        while (m.find()) {
+            String textoLink = m.group(1);
+            String url = m.group(2);
+            m.appendReplacement(sb, Matcher.quoteReplacement("<a href=\"" + url + "\">" + textoLink + "</a>"));
+        }
+        m.appendTail(sb);
+        return sb.toString();
     }
 
     private static void abrirDescarga() {

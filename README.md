@@ -2,9 +2,7 @@
 
 Aplicación de escritorio en Java para modelar y resolver problemas de optimización lineal. Vertex permite escribir una función objetivo y sus restricciones, seleccionar un método de solución o dejar que la aplicación recomiende uno de acuerdo con la estructura del problema — y entender, paso a paso, por qué llegó a esa respuesta.
 
-<p align="center">
-  <img src="/src/main/resources/vertex-logo.png" alt="Logo de Vertex" width="180">
-</p>
+![Logo de Vertex](/src/main/resources/vertex-logo.png)
 
 ## Descarga
 
@@ -22,13 +20,15 @@ También puedes buscar el instalador o el `.zip` de cualquier versión anterior 
 
 ## Novedades
 
-La versión actual es **1.3.1**: cada ventana de resultados (Simplex, Big M, Simplex Dual, Costos Duales, Gráfico, Húngaro y Numérico) tiene ahora un botón **(?)** clicable en su barra de título que abre una guía teórica completa del método — fundamento matemático, el ciclo del algoritmo paso a paso y un ejemplo resuelto — además de recordar la colorimetría de esa ventana.
+La versión actual es **2.0.0**: la ventana principal tiene una nueva pantalla **Texto libre (IA)** en la que escribes el problema tal como viene en el enunciado. Una IA que corre en tu propio equipo lo convierte en función objetivo y restricciones, Vertex elige los algoritmos que aplican y lo carga todo en el Editor para que lo revises y calcules. Las dos pantallas tienen además un botón **Limpiar**. Ver [Texto libre con IA](#texto-libre-con-ia-opcional).
 
 El historial completo de cambios, versión por versión, está en [`docs/release-notes`](docs/release-notes).
 
 ## Funcionalidades
 
 - Optimización de problemas de **maximización** y **minimización**.
+- **Texto libre con IA local (opcional):** escribe el enunciado en palabras y Vertex arma el modelo por ti.
+- Botón **Limpiar** en el Editor y en Texto libre.
 - Validación de la sintaxis de las expresiones y de las restricciones.
 - Visualización de tablas y pasos intermedios de los algoritmos, indicando en cada paso si la solución es factible y si ya es óptima.
 - Ayuda teórica por algoritmo: cada ventana de resultados tiene un botón **(?)** que explica cómo funciona el método (fundamento, pasos y un ejemplo resuelto), además de recordar el significado de los colores usados en esa ventana.
@@ -84,6 +84,9 @@ Dependencias declaradas en el `pom.xml`:
 - `org.netbeans.external:AbsoluteLayout:RELEASE220`
 - `org.json:json:20240303` — persistencia del historial de cálculos.
 - `com.formdev:flatlaf:3.7.2` — interfaz visual moderna.
+- `org.junit.jupiter:junit-jupiter:5.10.2` (solo para tests).
+
+La conexión con la IA usa el `HttpClient` incluido en Java 17, así que no agrega dependencias.
 
 Estas se descargan automáticamente al compilar con Maven, siempre que tengas conexión a internet en ese momento (si ves un error de resolución de dependencias, revisa tu conexión antes que nada).
 
@@ -153,11 +156,30 @@ x13 + x23 + x33 = 1
 
 Para estos métodos, incluya todas las combinaciones de origen y destino en la función objetivo. El método Húngaro requiere una matriz cuadrada y restricciones de asignación balanceadas.
 
+## Texto libre con IA (opcional)
+
+En la pestaña **Texto libre (IA)** puedes pegar un enunciado como este:
+
+> Una carpintería fabrica mesas y sillas. Cada mesa deja una ganancia de 3 dólares y cada silla de 5. Se pueden fabricar como mucho 4 mesas por día. Cada silla requiere 2 horas de pintura y hay 12 horas disponibles. Cada mesa usa 3 tablas y cada silla 2, y hay 18 tablas.
+
+Al presionar **Analizar** (o `Ctrl+Enter`), Vertex vuelve al Editor con `Max Z = 3x1 + 5x2`, las tres restricciones y los algoritmos recomendados (Gráfico y Simplex) ya marcados. Luego tú revisas y presionas **Calcular** como siempre.
+
+Cómo funciona:
+
+- El análisis lo hace [Ollama](https://ollama.com/download), un motor de IA **gratuito que corre en tu equipo**: no necesita internet ni cuenta, y el enunciado no sale de tu computador.
+- La primera vez, Vertex ofrece descargar el modelo `qwen2.5:3b` (≈2 GB). No requiere tarjeta gráfica; se recomiendan unos 4 GB de RAM libres. En CPU, cada análisis tarda entre unos segundos y medio minuto.
+- La IA solo modela (variables, Z y restricciones). Los algoritmos recomendados los elige Vertex según la estructura del problema, con las mismas reglas que habilitan el selector.
+- Vertex corrige solo los detalles de formato más comunes: pasa al lado izquierdo las variables que quedaron a la derecha (`x1 <= 2x3` → `x1-2x3<=0`) y simplifica montos con muchos ceros (`300000x1 + ... <= 12000000` → `3x1 + ... <= 120`). En ambos casos deja un aviso para que revises el sentido de la restricción. También avisa cuando un recurso compartido parece haberse partido en varias restricciones.
+- Lo que propone la IA pasa por el mismo validador del Editor. Si no cumple el formato de Vertex, se le pide que se corrija. Si aun así queda algo mal, se carga igual y aparece un aviso con el error para que lo arregles a mano.
+- Sin Ollama, Vertex funciona exactamente igual; la pestaña solo muestra cómo instalarlo.
+
+Para usar otro modelo o servidor, cambia las preferencias `iaModelo` e `iaUrl` (nodo de Java Preferences `com/mycompany/problema/programacion/lineal/ia`).
+
 ## Límites y consideraciones
 
 - El método gráfico trabaja únicamente con dos variables.
 - El método numérico enumera combinaciones de variables básicas y limita el sistema estándar a 18 variables para evitar un crecimiento combinatorio excesivo.
-- El método Simplex Dual admite restricciones `<=`; para restricciones `>=` o `=`, use Big M.
+- El método Simplex Dual admite restricciones `<=` y `>=` (las `>=` se multiplican por −1) y está pensado para minimizar con costos positivos; para restricciones `=`, use Big M.
 - Los archivos `SimplexExamples.txt` contienen casos de entrada de referencia.
 
 ## Estructura del proyecto
@@ -170,6 +192,12 @@ src/
 │   │   │   ├── algoritmos/
 │   │   │   │   ├── Json_History.java
 │   │   │   │   └── MetodoPL.java
+│   │   │   │
+│   │   │   ├── ia/
+│   │   │   │   ├── AnalizadorProblema.java
+│   │   │   │   ├── ClienteOllama.java
+│   │   │   │   ├── MotorIA.java
+│   │   │   │   └── ResultadoAnalisis.java
 │   │   │   │
 │   │   │   ├── modelo/
 │   │   │   │   ├── ProblemaPL.java
@@ -193,6 +221,7 @@ src/
 │   │   │   ├── MultiCalculos.java
 │   │   │   ├── SeleccionMultiAlgoritmo.java
 │   │   │   ├── PrincipalPage.java
+│   │   │   ├── PantallaTextoLibre.java
 │   │   │   ├── ProblemaProgramacionLineal.java
 │   │   │   ├── MenuHistorial.java
 │   │   │   ├── VentanaPrefs.java
@@ -205,6 +234,7 @@ src/
 │   │   └── SimplexExamples.txt
 │   │
 │   └── resources/
+│       ├── ia/prompt-sistema.txt
 │       ├── vertex-logo.png
 │       ├── vertex-icon.png
 │       ├── vertex-icon-256.png
@@ -216,11 +246,11 @@ Las notas de cada versión, con el detalle de qué cambió y por qué, viven en 
 
 ## Estado del proyecto
 
-No se incluyen pruebas automatizadas, por lo que conviene verificar los resultados con casos de prueba conocidos.
+Hay pruebas automatizadas para la conversión de texto libre a modelo (`src/test`, se ejecutan con `mvn test`), pero todavía no para los algoritmos. Si vas a reutilizar el código, verifica los resultados con casos de prueba conocidos.
 
 ## Licencia
 
-Vertex se distribuye bajo la licencia [Apache 2.0](LICENSE). Puedes usarlo, modificarlo y distribuirlo, conservando el aviso de autoría (© 2026 Anderson Ernesto Osorio Patiño) y el texto de la licencia.
+Vertex se distribuye bajo la licencia [Apache 2.0](LICENSE). Puedes usarlo, modificarlo y distribuirlo, conservando el aviso de autoría (© 2026 Anderson Ernesto Osorio Patiño, ver [`NOTICE`](NOTICE)) y el texto de la licencia.
 
 ## 💖 Ayúdame a avanzar
 

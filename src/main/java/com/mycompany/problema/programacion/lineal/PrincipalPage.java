@@ -27,6 +27,18 @@ public class PrincipalPage extends javax.swing.JFrame {
     private MenuHistorial menuHistorial;
     private SeleccionMultiAlgoritmo seleccionMulti;
 
+    // Pestañas Editor / Texto libre (2.0.0)
+    private static final String CARTA_EDITOR = "editor";
+    private static final String CARTA_TEXTO = "texto";
+    private final java.awt.CardLayout cartas = new java.awt.CardLayout();
+    private javax.swing.JPanel areaCartas;
+    private PantallaTextoLibre pantallaTextoLibre;
+    private javax.swing.JToggleButton tabEditor;
+    private javax.swing.JToggleButton tabTexto;
+    /** Aviso sobre la tarjeta de Z con lo que dejó la IA (se cierra con ×). */
+    private javax.swing.JPanel avisoIA;
+    private javax.swing.JLabel textoAvisoIA;
+
     private static final String PREF_X = "ventanaX";
     private static final String PREF_Y = "ventanaY";
     private static final String PREF_W = "ventanaAncho";
@@ -104,22 +116,191 @@ public class PrincipalPage extends javax.swing.JFrame {
         selector.add(jLabel3, java.awt.BorderLayout.WEST);
         selector.add(seleccionMulti.getPanel(), java.awt.BorderLayout.CENTER);
 
+        javax.swing.JButton botonLimpiar = PantallaTextoLibre.crearBotonSecundario("Limpiar");
+        botonLimpiar.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 15));
+        botonLimpiar.setPreferredSize(new java.awt.Dimension(120, 40));
+        botonLimpiar.setToolTipText("Borra Z, las restricciones y el algoritmo elegido");
+        botonLimpiar.addActionListener(e -> limpiarEditor());
+        javax.swing.JPanel botones = new javax.swing.JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 12, 0));
+        botones.setOpaque(false);
+        botones.add(botonLimpiar);
+        botones.add(CalcButton);
+
         java.awt.GridBagConstraints gbc = new java.awt.GridBagConstraints();
         gbc.gridx = 0;
         gbc.weightx = 1;
         gbc.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gbc.insets = new java.awt.Insets(0, 0, 14, 0);
         gbc.gridy = 0;
-        jPanel1.add(objetivo, gbc);
+        jPanel1.add(crearAvisoIA(), gbc);
         gbc.gridy = 1;
-        jPanel1.add(restricciones, gbc);
+        jPanel1.add(objetivo, gbc);
         gbc.gridy = 2;
-        jPanel1.add(selector, gbc);
+        jPanel1.add(restricciones, gbc);
         gbc.gridy = 3;
+        jPanel1.add(selector, gbc);
+        gbc.gridy = 4;
         gbc.insets = new java.awt.Insets(2, 0, 0, 0);
         gbc.anchor = java.awt.GridBagConstraints.CENTER;
         gbc.fill = java.awt.GridBagConstraints.NONE;
-        jPanel1.add(CalcButton, gbc);
+        jPanel1.add(botones, gbc);
+    }
+
+    private javax.swing.JPanel crearAvisoIA() {
+        avisoIA = new javax.swing.JPanel(new java.awt.BorderLayout(10, 0));
+        textoAvisoIA = new javax.swing.JLabel();
+        textoAvisoIA.setForeground(new java.awt.Color(23, 45, 66));
+        javax.swing.JButton cerrar = new javax.swing.JButton("×");
+        cerrar.putClientProperty("JButton.buttonType", "toolBarButton");
+        cerrar.setForeground(new java.awt.Color(23, 45, 66));
+        cerrar.setFocusable(false);
+        cerrar.setToolTipText("Cerrar aviso");
+        cerrar.addActionListener(e -> ocultarAvisoIA());
+        avisoIA.add(textoAvisoIA, java.awt.BorderLayout.CENTER);
+        avisoIA.add(cerrar, java.awt.BorderLayout.EAST);
+        avisoIA.setVisible(false);
+        return avisoIA;
+    }
+
+    private void mostrarAvisoIA(String html, boolean esError) {
+        java.awt.Color fondo = esError ? new java.awt.Color(255, 241, 241) : new java.awt.Color(238, 240, 251);
+        java.awt.Color borde = esError ? new java.awt.Color(242, 196, 196) : new java.awt.Color(201, 204, 242);
+        avisoIA.setBackground(fondo);
+        avisoIA.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+                javax.swing.BorderFactory.createLineBorder(borde),
+                javax.swing.BorderFactory.createEmptyBorder(8, 14, 8, 6)));
+        // ancho fijo para que el HTML haga salto de línea en vez de ensanchar la ventana
+        textoAvisoIA.setText("<html><div style='width:640px'>" + html + "</div></html>");
+        avisoIA.setVisible(true);
+        jPanel1.revalidate();
+        jPanel1.repaint();
+    }
+
+    private void ocultarAvisoIA() {
+        if (avisoIA.isVisible()) {
+            avisoIA.setVisible(false);
+            jPanel1.revalidate();
+            jPanel1.repaint();
+        }
+    }
+
+    /** Botón "Limpiar" del Editor: deja Z, restricciones, tipo y algoritmo como al abrir la app. */
+    private void limpiarEditor() {
+        boolean hayTexto = !ObjetiveFunction.getText().trim().isEmpty()
+                || !Restrictions.getText().trim().isEmpty();
+        if (hayTexto) {
+            Object[] opciones = {"Sí, limpiar", "Cancelar"};
+            int opcion = JOptionPane.showOptionDialog(this,
+                    "¿Borrar la función objetivo, las restricciones y el algoritmo elegido?",
+                    "Limpiar", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE,
+                    null, opciones, opciones[1]);
+            if (opcion != 0) {
+                return;
+            }
+        }
+        ObjetiveFunction.setText("");
+        Restrictions.setText("");
+        ZType.setSelectedIndex(0);
+        seleccionMulti.seleccionarUno(null); // vuelve a "Decide por mi"
+        ocultarAvisoIA();
+        ObjetiveFunction.requestFocusInWindow();
+    }
+
+    /**
+     * Recibe el modelo que armó la IA, lo inyecta en el Editor con el mismo
+     * código del historial y deja un aviso con lo que haya que revisar
+     * (errores del parser, algoritmos omitidos por incompatibles...).
+     */
+    private void cargarDesdeIA(com.mycompany.problema.programacion.lineal.ia.ResultadoAnalisis resultado) {
+        org.json.JSONObject problema = resultado.getProblema();
+        menuHistorial.inyectar(problema);
+
+        List<String> avisos = new ArrayList<>(resultado.getAdvertencias());
+        List<String> marcados = seleccionMulti.getSeleccionados();
+        org.json.JSONArray pedidos = problema.optJSONArray("Metodos");
+        if (pedidos != null) {
+            for (int i = 0; i < pedidos.length(); i++) {
+                String nombre = pedidos.optString(i, "");
+                if (!marcados.contains(nombre)) {
+                    String motivo = motivoIncompatible(nombre, marcados);
+                    avisos.add("Se omitió " + nombre + (motivo != null ? ": " + motivo.toLowerCase() : "") + ".");
+                }
+            }
+        }
+
+        StringBuilder html = new StringBuilder();
+        if (resultado.isValido()) {
+            html.append("<b>Modelo generado por la IA.</b> Revisa Z y las restricciones antes de calcular.");
+        } else {
+            html.append("<b>La IA no logró un modelo válido:</b> ")
+                    .append(escaparHtml(resultado.getError()))
+                    .append("<br>Corrígelo aquí antes de calcular.");
+        }
+        for (String aviso : avisos) {
+            html.append("<br>• ").append(escaparHtml(aviso));
+        }
+        mostrarAvisoIA(html.toString(), !resultado.isValido());
+    }
+
+    private static String escaparHtml(String s) {
+        return s == null ? "" : s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+
+    private void mostrarPantalla(String carta) {
+        cartas.show(areaCartas, carta);
+        tabEditor.setSelected(CARTA_EDITOR.equals(carta));
+        tabTexto.setSelected(CARTA_TEXTO.equals(carta));
+        if (CARTA_TEXTO.equals(carta)) {
+            pantallaTextoLibre.alMostrar();
+        } else {
+            ObjetiveFunction.requestFocusInWindow();
+        }
+    }
+
+    /** Selector de pantalla tipo segmentado, al lado del logo. */
+    private javax.swing.JPanel crearPestanas() {
+        tabEditor = crearPestana("Editor", "Escribe Z y las restricciones a mano");
+        tabTexto = crearPestana("Texto libre (IA)", "Describe el problema en palabras y deja que la IA lo modele");
+        javax.swing.ButtonGroup grupo = new javax.swing.ButtonGroup();
+        grupo.add(tabEditor);
+        grupo.add(tabTexto);
+        tabEditor.setSelected(true);
+        tabEditor.addActionListener(e -> mostrarPantalla(CARTA_EDITOR));
+        tabTexto.addActionListener(e -> mostrarPantalla(CARTA_TEXTO));
+
+        javax.swing.JPanel tarjeta = new javax.swing.JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 0));
+        tarjeta.setBackground(java.awt.Color.WHITE);
+        tarjeta.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+                javax.swing.BorderFactory.createLineBorder(new java.awt.Color(220, 226, 234)),
+                javax.swing.BorderFactory.createEmptyBorder(6, 6, 6, 6)));
+        tarjeta.add(tabEditor);
+        tarjeta.add(tabTexto);
+        return tarjeta;
+    }
+
+    private javax.swing.JToggleButton crearPestana(String texto, String tooltip) {
+        javax.swing.JToggleButton b = new javax.swing.JToggleButton(texto);
+        b.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 14));
+        b.setFocusPainted(false);
+        b.setToolTipText(tooltip);
+        b.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+        b.putClientProperty("FlatLaf.style", "background: #FFFFFF; foreground: #172D42;"
+                + " selectedBackground: #4438D0; selectedForeground: #FFFFFF;"
+                + " hoverBackground: #EEF0FB; borderWidth: 0; focusWidth: 0; arc: 8");
+        return b;
+    }
+
+    /** Envuelve una pantalla para que quede centrada dentro de su carta. */
+    private static javax.swing.JPanel centrada(java.awt.Component contenido) {
+        javax.swing.JPanel carta = new javax.swing.JPanel(new java.awt.GridBagLayout());
+        carta.setOpaque(false);
+        java.awt.GridBagConstraints gbc = new java.awt.GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = java.awt.GridBagConstraints.CENTER;
+        gbc.insets = new java.awt.Insets(0, 20, 20, 20);
+        carta.add(contenido, gbc);
+        return carta;
     }
 
     private javax.swing.JPanel crearTarjeta() {
@@ -146,8 +327,13 @@ public class PrincipalPage extends javax.swing.JFrame {
 
     /** Arma el botón hamburguesa y el panel de historial. */
     private void instalarMenuHistorial() {
-        menuHistorial = new MenuHistorial(historial, ObjetiveFunction, ZType, Restrictions, AlgoritmoBox);
+        menuHistorial = new MenuHistorial(historial, ObjetiveFunction, ZType, Restrictions, seleccionMulti);
         menuHistorial.instalarEn(this, getLayeredPane(), getWidth(), getHeight());
+        menuHistorial.setAlInyectar(() -> {
+            if (!tabEditor.isSelected()) {
+                mostrarPantalla(CARTA_EDITOR);
+            }
+        });
         addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override
             public void componentResized(java.awt.event.ComponentEvent evt) {
@@ -172,20 +358,107 @@ public class PrincipalPage extends javax.swing.JFrame {
         Restrictions.addKeyListener(recalculador);
     }
 
-    /** Compatibilidad por formato de variables, separada de los checks matemáticos. */
-    private boolean esCompatible(String nombreAlgoritmo, List<String> seleccionados) {
-        FamiliaFormato familiaSeleccionada = FamiliaFormato.GENERAL;
-        for (String seleccionado : seleccionados) {
-            FamiliaFormato familia = familiaFormato(seleccionado);
-            if (familia != FamiliaFormato.GENERAL) {
-                familiaSeleccionada = familia;
-                break;
+    /**
+     * Reglas del selector múltiple. Primero el formato de variables que
+     * exige cada algoritmo (xi vs xij) contra el detectado en Z; luego las
+     * condiciones estructurales de cada método (sin pair(), que modifica
+     * FO/R). Con Z vacía solo se impide mezclar familias entre sí.
+     * Devuelve null si es compatible, o el motivo para el tooltip.
+     */
+    private String motivoIncompatible(String nombreAlgoritmo, List<String> seleccionados) {
+        FamiliaFormato familiaCandidata = familiaFormato(nombreAlgoritmo);
+        String fo = ObjetiveFunction.getText().replaceAll("\\s+", "");
+        FamiliaFormato formatoProblema = formatoProblema(fo);
+
+        if (formatoProblema == FamiliaFormato.GENERAL) {
+            for (String seleccionado : seleccionados) {
+                FamiliaFormato familia = familiaFormato(seleccionado);
+                if (familia != FamiliaFormato.GENERAL && familiaCandidata != FamiliaFormato.GENERAL
+                        && familia != familiaCandidata) {
+                    return "No se puede combinar con " + seleccionado + " (otro formato de variables)";
+                }
+            }
+            return null;
+        }
+        if (familiaCandidata != FamiliaFormato.GENERAL && familiaCandidata != formatoProblema) {
+            return familiaCandidata == FamiliaFormato.VECTOR
+                    ? "Requiere variables xi (x1, x2, ...)"
+                    : "Requiere variables xij (x11, x12, ...)";
+        }
+
+        String[] restricciones = restriccionesValidas();
+        boolean hayMayorIgual = false, hayIgual = false, hayRhsNegativo = false;
+        for (String r : restricciones) {
+            String[] partes = parseRestriction(r);
+            hayMayorIgual |= partes[1].equals(">=");
+            hayIgual |= partes[1].equals("=");
+            try {
+                hayRhsNegativo |= Double.parseDouble(partes[2]) < 0;
+            } catch (NumberFormatException ex) {
+                // lado derecho incompleto mientras se escribe
             }
         }
-        FamiliaFormato familiaCandidata = familiaFormato(nombreAlgoritmo);
-        return familiaSeleccionada == FamiliaFormato.GENERAL
-                || familiaCandidata == FamiliaFormato.GENERAL
-                || familiaCandidata == familiaSeleccionada;
+
+        switch (nombreAlgoritmo) {
+            case "Grafico":
+                return checkGrafico(restricciones, fo, 0) ? null : "Requiere exactamente 2 variables";
+            case "Simplex":
+                return (hayMayorIgual || hayIgual)
+                        ? "Solo restricciones <= (para >= o = usa Big M)" : null;
+            case "Big M":
+                return (hayMayorIgual || hayIgual)
+                        ? null : "Requiere alguna restricción >= o = (si no, usa Simplex)";
+            case "Simplex Dual":
+                if (hayIgual) {
+                    return "No admite restricciones = (usa Big M)";
+                }
+                return (hayMayorIgual || hayRhsNegativo)
+                        ? null : "Requiere restricciones >= o lado derecho negativo";
+            case "Hungaro":
+                return checkHungaro(restricciones, fo, 0)
+                        ? null : "Requiere estructura de asignación (Σxij = 1 por fila y columna)";
+            default:
+                return null;
+        }
+    }
+
+    /** Restricciones escritas que ya se pueden parsear (ignora líneas a medio escribir). */
+    private String[] restriccionesValidas() {
+        List<String> validas = new ArrayList<>();
+        for (String linea : Restrictions.getText().split("\\r?\\n")) {
+            if (linea.trim().isEmpty()) {
+                continue;
+            }
+            try {
+                parseRestriction(linea);
+                validas.add(linea);
+            } catch (IllegalArgumentException ex) {
+                // incompleta: no cuenta todavía
+            }
+        }
+        return validas.toArray(new String[0]);
+    }
+
+    /**
+     * Detecta el formato de variables de Z: xij si todos los subíndices
+     * tienen la misma longitud par (x11, x23, x0102...); xi en cualquier
+     * otro caso (x1, x2, x10...). GENERAL si todavía no hay variables.
+     */
+    private FamiliaFormato formatoProblema(String fo) {
+        Matcher m = Pattern.compile("x(\\d+)", Pattern.CASE_INSENSITIVE).matcher(fo);
+        int longitud = -1;
+        while (m.find()) {
+            int l = m.group(1).length();
+            if (longitud == -1) {
+                longitud = l;
+            } else if (l != longitud) {
+                return FamiliaFormato.VECTOR;
+            }
+        }
+        if (longitud == -1) {
+            return FamiliaFormato.GENERAL;
+        }
+        return longitud % 2 == 0 ? FamiliaFormato.PAREJAS : FamiliaFormato.VECTOR;
     }
 
     private FamiliaFormato familiaFormato(String nombreAlgoritmo) {
@@ -193,8 +466,8 @@ public class PrincipalPage extends javax.swing.JFrame {
             case "Grafico":
             case "Simplex":
             case "Big M":
+            case "Simplex Dual": // AlgoritmoDual lee x1, x2... como índices simples
                 return FamiliaFormato.VECTOR;
-            case "Simplex Dual":
             case "Costos Dual":
             case "Hungaro":
                 return FamiliaFormato.PAREJAS;
@@ -257,17 +530,17 @@ public class PrincipalPage extends javax.swing.JFrame {
             java.awt.FlowLayout.LEFT, 16, 16));
         barraSuperior.setOpaque(false);
         barraSuperior.add(tarjetaLogo);
+        barraSuperior.add(crearPestanas());
         fondo.add(barraSuperior, java.awt.BorderLayout.NORTH);
 
-        javax.swing.JPanel areaPrincipal = new javax.swing.JPanel(new java.awt.GridBagLayout());
-        areaPrincipal.setOpaque(false);
-        java.awt.GridBagConstraints gbcPrincipal = new java.awt.GridBagConstraints();
-        gbcPrincipal.gridx = 0;
-        gbcPrincipal.gridy = 0;
-        gbcPrincipal.anchor = java.awt.GridBagConstraints.CENTER;
-        gbcPrincipal.insets = new java.awt.Insets(0, 20, 20, 20);
-        areaPrincipal.add(jPanel1, gbcPrincipal);
-        fondo.add(areaPrincipal, java.awt.BorderLayout.CENTER);
+        // Dos pantallas en la misma ventana: el Editor de siempre (jPanel1,
+        // intacto) y la de texto libre con IA.
+        pantallaTextoLibre = new PantallaTextoLibre(this::cargarDesdeIA);
+        areaCartas = new javax.swing.JPanel(cartas);
+        areaCartas.setOpaque(false);
+        areaCartas.add(centrada(jPanel1), CARTA_EDITOR);
+        areaCartas.add(centrada(pantallaTextoLibre), CARTA_TEXTO);
+        fondo.add(areaCartas, java.awt.BorderLayout.CENTER);
         setContentPane(fondo);
 
         revalidate();
@@ -366,7 +639,7 @@ public class PrincipalPage extends javax.swing.JFrame {
         jLabel3.setText("Algoritmo:");
 
         AlgoritmoBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Decide por mi", "Grafico", "Numerico", "Simplex", "Big M", "Simplex Dual", "Costos Dual", "Hungaro" }));
-        seleccionMulti = new SeleccionMultiAlgoritmo(this, AlgoritmoBox, this::esCompatible);
+        seleccionMulti = new SeleccionMultiAlgoritmo(this, AlgoritmoBox, this::motivoIncompatible);
         instalarSeleccionMultiple();
 
         CalcButton.setBackground(new java.awt.Color(51, 102, 204));

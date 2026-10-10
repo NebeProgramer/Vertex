@@ -3,8 +3,15 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.mycompany</groupId>
     <artifactId>Vertex</artifactId>
-    <version>1.2.0</version>
+    <version>2.0.0</version>
     <packaging>jar</packaging>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
     <dependencies>
         <dependency>
             <groupId>org.netbeans.external</groupId>
@@ -21,6 +28,12 @@
             <artifactId>flatlaf</artifactId>
             <version>3.7.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
     <properties>
@@ -32,6 +45,12 @@
     <build>
         <finalName>Vertex</finalName>
         <plugins>
+            <!-- Surefire 3.x para que "mvn package" ejecute los tests de JUnit 5 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+            </plugin>
             <!-- Genera un JAR ejecutable con todas las dependencias incluidas.
             outputFile apunta al mismo archivo que produce el jar plano
             por defecto (target/Vertex.jar), así el shade-plugin lo
@@ -65,4 +84,51 @@
             </plugin>
         </plugins>
     </build>
+
+    <!-- Profile aparte para no exigir WiX Toolset en un build normal.
+    Se activa solo con: mvn clean package -P instalador
+    Requisitos en la máquina donde se genere el instalador:
+      - JDK 17 (ya lo tienes, jpackage viene incluido desde el JDK 14)
+      - WiX Toolset v3.14 instalado y en el PATH de Windows -->
+    <profiles>
+        <profile>
+            <id>instalador</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.panteleyev</groupId>
+                        <artifactId>jpackage-maven-plugin</artifactId>
+                        <version>1.6.6</version>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jpackage</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <name>Vertex</name>
+                            <appVersion>${project.version}</appVersion>
+                            <vendor>Anderson</vendor>
+                            <!-- Carpeta donde queda el instalador generado -->
+                            <destination>${project.build.directory}/installer</destination>
+                            <!-- Carpeta que contiene el jar a empaquetar (target/, donde el shade-plugin deja Vertex.jar) -->
+                            <input>${project.build.directory}</input>
+                            <mainJar>${project.build.finalName}.jar</mainJar>
+                            <mainClass>${exec.mainClass}</mainClass>
+                            <!-- Ajusta esta ruta al .ico real dentro de tu proyecto -->
+                            <icon>${project.basedir}/src/main/resources/vertex-icon.ico</icon>
+                            <!-- El instalador muestra la licencia antes de instalar -->
+                            <licenseFile>${project.basedir}/LICENSE</licenseFile>
+                            <type>MSI</type>
+                            <winDirChooser>true</winDirChooser>
+                            <winMenu>true</winMenu>
+                            <winShortcut>true</winShortcut>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

@@ -52,7 +52,10 @@ public class MenuHistorial {
     private final SubIndiceTextPane campoZ;
     private final JComboBox<String> tipoBox;
     private final SubIndiceTextPane campoRestricciones;
-    private final JComboBox<String> algoritmoBox;
+    private final SeleccionMultiAlgoritmo seleccionAlgoritmos;
+    /** Se ejecuta después de cada inyección (p. ej. volver a la pestaña Editor). */
+    private Runnable alInyectar = () -> {
+    };
 
     private final BotonFade boton;
     private final JPanel panel;
@@ -81,12 +84,12 @@ public class MenuHistorial {
     private boolean popupEliminarAbierto;
 
     public MenuHistorial(Json_History historial, SubIndiceTextPane campoZ, JComboBox<String> tipoBox,
-            SubIndiceTextPane campoRestricciones, JComboBox<String> algoritmoBox) {
+            SubIndiceTextPane campoRestricciones, SeleccionMultiAlgoritmo seleccionAlgoritmos) {
         this.historial = historial;
         this.campoZ = campoZ;
         this.tipoBox = tipoBox;
         this.campoRestricciones = campoRestricciones;
-        this.algoritmoBox = algoritmoBox;
+        this.seleccionAlgoritmos = seleccionAlgoritmos;
 
         this.boton = crearBoton();
         this.lista = crearLista();
@@ -466,7 +469,16 @@ public class MenuHistorial {
         }
     }
 
-    private void inyectar(JSONObject obj) {
+    public void setAlInyectar(Runnable alInyectar) {
+        this.alInyectar = alInyectar;
+    }
+
+    /**
+     * Carga un problema con el formato de history.json (z, Tipo, R,
+     * Metodos) en el Editor. Lo usan tanto el historial como la pantalla de
+     * texto libre (IA), para que ambos inyecten exactamente igual.
+     */
+    public void inyectar(JSONObject obj) {
         campoZ.setText(obj.optString("z", "").trim());
         String tipo = obj.optString("Tipo", "Max");
         tipoBox.setSelectedItem(tipo);
@@ -483,18 +495,18 @@ public class MenuHistorial {
         }
         campoRestricciones.setText(sb.toString());
 
+        // Se restauran TODOS los métodos guardados (no solo el primero), y
+        // después de cargar Z/restricciones para que la compatibilidad se
+        // evalúe contra el problema recién inyectado.
+        List<String> nombres = new java.util.ArrayList<>();
         JSONArray metodos = obj.optJSONArray("Metodos");
-        if (metodos != null && metodos.length() > 0) {
-            String primero = metodos.optString(0, null);
-            if (primero != null) {
-                for (int i = 0; i < algoritmoBox.getItemCount(); i++) {
-                    if (algoritmoBox.getItemAt(i).equals(primero)) {
-                        algoritmoBox.setSelectedIndex(i);
-                        break;
-                    }
-                }
+        if (metodos != null) {
+            for (int i = 0; i < metodos.length(); i++) {
+                nombres.add(metodos.optString(i, ""));
             }
         }
+        seleccionAlgoritmos.seleccionarVarios(nombres);
+        alInyectar.run();
     }
 
     /**

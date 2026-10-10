@@ -29,9 +29,10 @@ import com.mycompany.problema.programacion.lineal.parser.ParserLP;
  * (la de RHS más negativo) y luego se busca la columna, hasta que todos
  * los RHS queden &gt;= 0.
  *
- * Solo admite restricciones tipo &lt;= (con RHS positivo o negativo). Si
- * hay &gt;= o =, no aplica este método (se necesitarían artificiales, ahí
- * es Big M).
+ * Admite restricciones tipo &lt;= (con RHS positivo o negativo) y &gt;=,
+ * que se multiplican por -1 para quedar como &lt;= con RHS negativo (el
+ * caso típico del método: minimizar con costos positivos y restricciones
+ * &gt;=). Con =, no aplica (se necesitarían artificiales, ahí es Big M).
  *
  * @author PC-ANDERSON
  */
@@ -261,18 +262,22 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
             String op = partes[1];
             String rhs = partes[2];
 
-            if (!"<=".equals(op)) {
+            if ("=".equals(op)) {
                 throw new IllegalArgumentException(
-                        "El Simplex Dual (esta implementación) solo admite restricciones tipo <=.\n"
-                        + "La restricción " + (i + 1) + " (\"" + R[i] + "\") usa '" + op + "'.\n"
-                        + "Prueba con Big M para restricciones >= o =.");
+                        "El Simplex Dual (esta implementación) admite restricciones <= y >=, pero no =.\n"
+                        + "La restricción " + (i + 1) + " (\"" + R[i] + "\") usa '='.\n"
+                        + "Prueba con Big M para restricciones de igualdad.");
             }
+            // a·x >= b se multiplica por -1 y queda -a·x <= -b: el lado derecho
+            // negativo es justo lo que corrige el Simplex Dual (caso típico:
+            // minimizar con costos positivos y restricciones >=)
+            double signo = ">=".equals(op) ? -1.0 : 1.0;
 
-            b[i] = parseNum(rhs); // aquí SÍ puede ser negativo, a diferencia de Simplex normal
+            b[i] = signo * parseNum(rhs); // aquí SÍ puede ser negativo, a diferencia de Simplex normal
 
             Map<Integer, String> coefs = PrincipalPage.parseCoefficientsMap(lhs);
             for (int k = 0; k < numVars; k++) {
-                A[i][k] = parseNum(coefs.getOrDefault(ordered.get(k), "0"));
+                A[i][k] = signo * parseNum(coefs.getOrDefault(ordered.get(k), "0"));
             }
         }
 
