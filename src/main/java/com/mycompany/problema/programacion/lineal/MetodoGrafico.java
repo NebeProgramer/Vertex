@@ -4,6 +4,7 @@
  */
 package com.mycompany.problema.programacion.lineal;
 
+import com.mycompany.problema.programacion.lineal.algoritmos.FormatoNumero;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -339,9 +340,9 @@ public class MetodoGrafico extends javax.swing.JFrame implements MetodoPL {
             List<double[]> poligono = ordenarPoligono(puntosValidos);
             grafico.mostrarResultado(Rmat, poligono, puntosFactibles, mejorPunto, mejorZ, true);
 
-            txtResultado.setText(String.format(
-                    "Solución óptima:   \nx1 = %.3f    \nx2 = %.3f    \nZ = %.3f",
-                    mejorPunto[0], mejorPunto[1], mejorZ));
+            txtResultado.setText("Solución óptima:   \nx1 = " + FormatoNumero.fmt(mejorPunto[0])
+                    + "    \nx2 = " + FormatoNumero.fmt(mejorPunto[1])
+                    + "    \nZ = " + FormatoNumero.fmt(mejorZ));
 
         } else {
 

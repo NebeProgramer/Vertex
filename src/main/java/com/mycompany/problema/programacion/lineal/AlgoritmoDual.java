@@ -565,10 +565,7 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
     }
 
     private String fmt(double v) {
-        if (Math.abs(v - Math.round(v)) < 1e-6) {
-            return String.valueOf(Math.round(v));
-        }
-        return String.format("%.3f", v);
+        return com.mycompany.problema.programacion.lineal.algoritmos.FormatoNumero.fmt(v);
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

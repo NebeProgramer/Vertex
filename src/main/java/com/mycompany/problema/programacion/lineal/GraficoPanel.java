@@ -3,6 +3,7 @@
  */
 package com.mycompany.problema.programacion.lineal;
 
+import com.mycompany.problema.programacion.lineal.algoritmos.FormatoNumero;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -90,10 +91,9 @@ public class GraficoPanel extends JPanel {
                 boolean esOptimo = optimo != null
                         && Math.abs(datos[0] - optimo[0]) < 1e-6
                         && Math.abs(datos[1] - optimo[1]) < 1e-6;
-                return String.format(
-                        "<html>x1 = %.3f<br>x2 = %.3f<br>Z = %.3f%s</html>",
-                        datos[0], datos[1], datos[2],
-                        esOptimo ? "<br><b>(óptimo)</b>" : "");
+                return "<html>x1 = " + FormatoNumero.fmt(datos[0]) + "<br>x2 = " + FormatoNumero.fmt(datos[1])
+                        + "<br>Z = " + FormatoNumero.fmt(datos[2])
+                        + (esOptimo ? "<br><b>(óptimo)</b>" : "") + "</html>";
             }
         }
         return null;
@@ -228,7 +228,8 @@ public class GraficoPanel extends JPanel {
             g2.fillOval(px - 6, py - 6, 12, 12);
             g2.setColor(Color.BLACK);
             g2.drawOval(px - 6, py - 6, 12, 12);
-            g2.drawString(String.format("(%.2f, %.2f)  Z=%.2f", optimo[0], optimo[1], zOptimo), px + 8, py - 8);
+            g2.drawString("(" + FormatoNumero.fmt(optimo[0]) + ", " + FormatoNumero.fmt(optimo[1]) + ")  Z="
+                    + FormatoNumero.fmt(zOptimo), px + 8, py - 8);
         }
     }
 }

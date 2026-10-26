@@ -16,11 +16,13 @@ No hace falta compilar nada para usar Vertex: solo necesitas tener **Java 17 o s
 
 También puedes buscar el instalador o el `.zip` de cualquier versión anterior en la sección [Releases](https://github.com/NebeProgramer/Vertex/releases) de este repositorio.
 
-> 🆕 Vertex revisa automáticamente si hay una versión más nueva cada vez que abres la aplicación, y te avisa con un enlace de descarga si la hay.
+> 🆕 Vertex revisa automáticamente si hay una versión más nueva cada vez que abres la aplicación, y te avisa con un enlace de descarga si la hay.Una 
 
 ## Novedades
 
-La versión actual es **2.0.0**: la ventana principal tiene una nueva pantalla **Texto libre (IA)** en la que escribes el problema tal como viene en el enunciado. Una IA que corre en tu propio equipo lo convierte en función objetivo y restricciones, Vertex elige los algoritmos que aplican y lo carga todo en el Editor para que lo revises y calcules. Las dos pantallas tienen además un botón **Limpiar**. Ver [Texto libre con IA](#texto-libre-con-ia-opcional).
+La versión actual es **2.0.1**, que unifica el formato de los números en todas las ventanas de resultados (punto decimal, 3 decimales y enteros sin `.000`).
+
+La **2.0.0** trajo el cambio grande: la ventana principal tiene una nueva pantalla **Texto libre (IA)** en la que escribes el problema tal como viene en el enunciado. Una IA que corre en tu propio equipo lo convierte en función objetivo y restricciones, Vertex elige los algoritmos que aplican y lo carga todo en el Editor para que lo revises y calcules. Las dos pantallas tienen además un botón **Limpiar**. Ver [Texto libre con IA](#texto-libre-con-ia-opcional).
 
 El historial completo de cambios, versión por versión, está en [`docs/release-notes`](docs/release-notes).
 
@@ -104,7 +106,7 @@ mvn clean package
 java -jar target/Vertex.jar
 ```
 
-El comando `mvn clean package` genera un único JAR ejecutable en `target/Vertex.jar`, con todas las dependencias incluidas. La clase de inicio es `com.mycompany.problema.programacion.lineal.ProblemaProgramacionLineal`.
+El comando `mvn clean package` genera un único JAR ejecutable en `target/Vertex.jar`, con todas las dependencias incluidas, y además deja listo el archivo portátil de la release en `release/Vertex.zip` (con `Vertex.jar`, `LICENSE` y `NOTICE`). La clase de inicio es `com.mycompany.problema.programacion.lineal.ProblemaProgramacionLineal`.
 
 > La carpeta `target/` no está incluida en este repositorio (se genera al compilar). Si solo quieres usar la aplicación sin compilarla, ve a la sección [Descarga](#descarga).
 
@@ -116,7 +118,17 @@ El `.msi` de las releases se genera con [jpackage](https://openjdk.org/jeps/392)
 mvn clean package -P instalador
 ```
 
-Requiere tener [WiX Toolset v3.14](https://wixtoolset.org/) instalado y en el `PATH` de Windows. El instalador queda en `target/installer/`.
+Requiere tener [WiX Toolset v3.14](https://wixtoolset.org/) instalado y en el `PATH` de Windows.
+
+Al terminar, la carpeta `release/` tiene los dos archivos de la release con los nombres que enlaza la sección [Descarga](#descarga), listos para subir a GitHub:
+
+```text
+release/
+├── VertexSetup.msi   (instalador)
+└── Vertex.zip        (portátil: Vertex.jar + LICENSE + NOTICE)
+```
+
+`mvn clean` vacía también `release/`, y la carpeta no se sube al repositorio (está en `.gitignore`).
 
 ## Formato de entrada
 
@@ -190,6 +202,7 @@ src/
 │   ├── java/
 │   │   ├── com/mycompany/problema/programacion/lineal/
 │   │   │   ├── algoritmos/
+│   │   │   │   ├── FormatoNumero.java
 │   │   │   │   ├── Json_History.java
 │   │   │   │   └── MetodoPL.java
 │   │   │   │

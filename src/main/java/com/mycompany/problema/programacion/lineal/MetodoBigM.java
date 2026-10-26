@@ -655,10 +655,7 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
     }
 
     private String fmt(double v) {
-        if (Math.abs(v - Math.round(v)) < 1e-6) {
-            return String.valueOf(Math.round(v));
-        }
-        return String.format("%.3f", v);
+        return com.mycompany.problema.programacion.lineal.algoritmos.FormatoNumero.fmt(v);
     }
 
     /** Formatea una celda de la fila Z mostrando el término de M cuando aplica, ej: "5 + 2M" o "-3M". */

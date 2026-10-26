@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.mycompany</groupId>
     <artifactId>Vertex</artifactId>
-    <version>2.0.0</version>
+    <version>2.0.1</version>
     <packaging>jar</packaging>
     <licenses>
         <license>
@@ -82,6 +82,44 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Release portátil: release/Vertex.zip (Vertex.jar + LICENSE + NOTICE),
+            con el mismo nombre que enlazan el README y los release notes.
+            Va después del shade-plugin para empaquetar el jar ya ejecutable. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.8.0</version>
+                <executions>
+                    <execution>
+                        <id>zip-portable</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/assembly/portable.xml</descriptor>
+                            </descriptors>
+                            <finalName>Vertex</finalName>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <attach>false</attach>
+                            <outputDirectory>${project.basedir}/release</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- "mvn clean" también vacía release/, para no subir archivos de otra versión -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>${project.basedir}/release</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -126,6 +164,31 @@
                             <winMenu>true</winMenu>
                             <winShortcut>true</winShortcut>
                         </configuration>
+                    </plugin>
+                    <!-- jpackage siempre nombra el instalador <name>-<versión>.msi;
+                    se copia a release/VertexSetup.msi, el nombre que enlaza el README.
+                    Debe ir DESPUÉS de jpackage-maven-plugin (mismo phase: corre en
+                    el orden en que aparecen los plugins). -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.2.0</version>
+                        <executions>
+                            <execution>
+                                <id>renombrar-msi</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <copy file="${project.build.directory}/installer/Vertex-${project.version}.msi"
+                                              tofile="${project.basedir}/release/VertexSetup.msi"
+                                              overwrite="true" failonerror="true"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

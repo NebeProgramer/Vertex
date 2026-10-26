@@ -1,0 +1,15 @@
+target/
+*.class
+.nb-gradle/
+nbproject/private/
+
+# Notas personales del programador
+ideas.md
+
+# Archivos de release generados por Maven (se suben a GitHub Releases, no al repo)
+release/
+
+# Binarios que van en GitHub Releases o son resultados del build
+installer/
+target.zip
+completeVideo.mp4

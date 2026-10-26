@@ -901,10 +901,7 @@ public class AlgoritmoCostosDuales extends javax.swing.JFrame implements MetodoP
     }
 
     private String fmt(double v) {
-        if (Math.abs(v - Math.round(v)) < 1e-6) {
-            return String.valueOf(Math.round(v));
-        }
-        return String.format("%.2f", v);
+        return com.mycompany.problema.programacion.lineal.algoritmos.FormatoNumero.fmt(v);
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

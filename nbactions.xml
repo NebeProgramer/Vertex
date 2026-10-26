@@ -164,4 +164,15 @@
                 <argLine>--enable-preview</argLine>
             </properties>
         </action>
+        <action>
+            <actionName>CUSTOM-Generar instalador</actionName>
+            <displayName>Generar instalador</displayName>
+            <goals>
+                <goal>clean</goal>
+                <goal>package</goal>
+            </goals>
+            <activatedProfiles>
+                <activatedProfile>instalador</activatedProfile>
+            </activatedProfiles>
+        </action>
     </actions>
