@@ -24,7 +24,7 @@ La versión actual es **2.0.1**, que unifica el formato de los números en todas
 
 La **2.0.0** trajo el cambio grande: la ventana principal tiene una nueva pantalla **Texto libre (IA)** en la que escribes el problema tal como viene en el enunciado. Una IA que corre en tu propio equipo lo convierte en función objetivo y restricciones, Vertex elige los algoritmos que aplican y lo carga todo en el Editor para que lo revises y calcules. Las dos pantallas tienen además un botón **Limpiar**. Ver [Texto libre con IA](#texto-libre-con-ia-opcional).
 
-El historial completo de cambios, versión por versión, está en [`docs/release-notes`](docs/release-notes).
+El historial completo de cambios, versión por versión, está en las [Releases](https://github.com/NebeProgramer/Vertex/releases) del repositorio.
 
 ## Funcionalidades
 
@@ -255,7 +255,7 @@ src/
 └──
 ```
 
-Las notas de cada versión, con el detalle de qué cambió y por qué, viven en [`docs/release-notes`](docs/release-notes).
+Las notas de cada versión, con el detalle de qué cambió y por qué, están en las [Releases](https://github.com/NebeProgramer/Vertex/releases) del repositorio.
 
 ## Estado del proyecto
 

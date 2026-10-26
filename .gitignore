@@ -13,3 +13,6 @@ release/
 installer/
 target.zip
 completeVideo.mp4
+
+# Notas de release: se publican en GitHub Releases, no en el repo
+docs/release-notes/
