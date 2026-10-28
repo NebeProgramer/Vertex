@@ -20,7 +20,7 @@ También puedes buscar el instalador o el `.zip` de cualquier versión anterior 
 
 ## Novedades
 
-La versión actual es **2.0.1**, que unifica el formato de los números en todas las ventanas de resultados (punto decimal, 3 decimales y enteros sin `.000`).
+La versión actual es **2.0.2**: puedes llamar a las variables como quieras (`x10` y `x20`, `x3` y `x15`, `x11`...`x23`, o 10 o más variables) y Simplex, Big M, Simplex Dual, Gráfico y Numérico las resuelven mostrando tus nombres. El selector de algoritmos ahora decide qué métodos ofrecer según la estructura del problema y explica por qué un método no aplica. Ver [Formato de entrada](#formato-de-entrada).
 
 La **2.0.0** trajo el cambio grande: la ventana principal tiene una nueva pantalla **Texto libre (IA)** en la que escribes el problema tal como viene en el enunciado. Una IA que corre en tu propio equipo lo convierte en función objetivo y restricciones, Vertex elige los algoritmos que aplican y lo carga todo en el Editor para que lo revises y calcules. Las dos pantallas tienen además un botón **Limpiar**. Ver [Texto libre con IA](#texto-libre-con-ia-opcional).
 
@@ -147,9 +147,27 @@ x1 + 2x2 <= 8
 
 Los coeficientes pueden ser enteros, decimales, positivos o negativos. El coeficiente `1` puede omitirse: `x1` equivale a `1x1`. Se aceptan los operadores `<=`, `>=` y `=`.
 
+Puedes usar tantas variables como necesites y llamarlas como quieras, siempre con `x` + número: `x1` a `x12`, `x10` y `x20`, `x5` y `x7`... Vertex las usa tal cual y muestra los resultados con esos nombres.
+
+### Problemas generales con doble índice
+
+Si el problema tiene dos dimensiones naturales (producto *i* en planta *j*, crudo *i* en gasolina *j*...), también puedes escribirlo con variables `xij`: `x11`, `x12`, `x23`... Simplex, Big M, Simplex Dual, Gráfico y Numérico lo resuelven igual que con `x1, x2...`, y los resultados se muestran con tus nombres originales (`x23 = 10`). No hace falta usar todas las combinaciones: si no existe `x13`, simplemente no la escribas.
+
+```text
+Tipo: Max
+Función objetivo: 7x11 + 6x12 + 9.4x22 + 4.8x23
+
+Restricciones:
+4x11 <= 2000
+5x12 + 2x22 <= 10000
+x11 + x12 + x22 <= 3000
+```
+
+El doble índice como fila y columna solo importa en Húngaro y Costos Duales (ver abajo). Para el resto de los métodos, `x23` es simplemente el nombre de una variable.
+
 ### Asignación y transporte
 
-Los métodos Húngaro y Costos Duales usan variables de doble índice, por ejemplo `x11`, `x12`, `x21`. Estas representan la relación origen–destino (o trabajador–tarea).
+Los métodos Húngaro y Costos Duales usan variables de doble índice, por ejemplo `x11`, `x12`, `x21`. Estas representan la relación origen–destino (o trabajador–tarea): Vertex parte el número por la mitad (`x23` = origen 2, destino 3), así que todas deben tener la misma cantidad de dígitos y ningún índice puede ser 0 (`x10` no sirve aquí).
 
 Ejemplo de asignación:
 
@@ -218,6 +236,7 @@ src/
 │   │   │   │   └── TipoRestriccion.java
 │   │   │   │
 │   │   │   ├── parser/
+│   │   │   │   ├── MapeoVariables.java
 │   │   │   │   ├── ParserLP.java
 │   │   │   │   └── ParserTransporte.java
 │   │   │   │

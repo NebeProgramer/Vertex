@@ -19,7 +19,7 @@ TRADUCCIÓN DE FRASES A OPERADORES:
 - "A debe ser al menos el triple de B" -> A - 3B >= 0
 
 REGLAS DE FORMATO (Vertex rechaza cualquier otra cosa):
-- Variables: x1, x2, x3... (x minúscula + número). Nunca nombres como "mesas". Máximo 9 variables simples.
+- Variables: x1, x2, x3... (x minúscula + número). Nunca nombres como "mesas". Numéralas seguidas desde x1, sin saltarte ninguna (x1 a x12 si hay 12 variables).
 - "z" contiene solo la expresión, sin "Z =": "3x1 + 5x2".
 - Cada restricción tiene un único operador (<=, >= o =). Todas las variables van a la IZQUIERDA y a la derecha va un único número: "x1 - 2x3 <= 0", nunca "x1 <= 2x3".
 - Números sin separador de miles y con punto decimal: 1000 (no 1.000), 1.5 (no 1,5), 3x1 (no 3*x1).

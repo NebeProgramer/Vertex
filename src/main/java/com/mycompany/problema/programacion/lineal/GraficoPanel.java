@@ -64,6 +64,16 @@ public class GraficoPanel extends JPanel {
         repaint();
     }
 
+    /** Nombres de los ejes y del cuadro flotante; por defecto x1 y x2 (otros si el problema venía en xij). */
+    private String nombreEjeX = "x1";
+    private String nombreEjeY = "x2";
+
+    public void setNombresEjes(String nombreX, String nombreY) {
+        this.nombreEjeX = nombreX;
+        this.nombreEjeY = nombreY;
+        repaint();
+    }
+
     public void limpiar() {
         this.hayResultado = false;
         this.puntosFactibles = null;
@@ -91,7 +101,8 @@ public class GraficoPanel extends JPanel {
                 boolean esOptimo = optimo != null
                         && Math.abs(datos[0] - optimo[0]) < 1e-6
                         && Math.abs(datos[1] - optimo[1]) < 1e-6;
-                return "<html>x1 = " + FormatoNumero.fmt(datos[0]) + "<br>x2 = " + FormatoNumero.fmt(datos[1])
+                return "<html>" + nombreEjeX + " = " + FormatoNumero.fmt(datos[0])
+                        + "<br>" + nombreEjeY + " = " + FormatoNumero.fmt(datos[1])
                         + "<br>Z = " + FormatoNumero.fmt(datos[2])
                         + (esOptimo ? "<br><b>(óptimo)</b>" : "") + "</html>";
             }
@@ -143,8 +154,8 @@ public class GraficoPanel extends JPanel {
         g2.setStroke(new BasicStroke(1.5f));
         g2.drawLine(margen, h - margen, w - margen, h - margen); // eje x1
         g2.drawLine(margen, margen, margen, h - margen);         // eje x2
-        g2.drawString("x1", w - margen - 5, h - margen + 18);
-        g2.drawString("x2", margen - 25, margen + 5);
+        g2.drawString(nombreEjeX, w - margen - 5, h - margen + 18);
+        g2.drawString(nombreEjeY, margen - 25, margen + 5);
 
         // ---- región factible sombreada ----
         if (poligono != null && poligono.size() >= 3) {

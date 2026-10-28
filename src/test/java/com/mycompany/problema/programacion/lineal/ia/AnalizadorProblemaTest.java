@@ -120,6 +120,18 @@ class AnalizadorProblemaTest {
                 "4x11+6x12+5x21+3x22", Arrays.asList("x11+x12<=50", "x21+x22<=60", "x11+x21=30", "x12+x22=80")));
     }
 
+    /** xij que no es asignación ni transporte: PL general, no Húngaro/Costos Dual. */
+    @Test
+    void dobleIndiceGeneralNoVaAHungaro() {
+        // P6 del lote xij (mezcla de crudos con porcentajes): >= y = → Big M
+        assertEquals(Arrays.asList("Big M", "Numerico"), AnalizadorProblema.recomendarAlgoritmos("Max",
+                "20x11+22x12+24x13+23x21+25x22+27x23",
+                Arrays.asList("x11+x21<=20", "x11+x12+x13=35", "1.5x11-0.5x12-1.5x13>=0")));
+        // todo <= con coeficientes distintos de 1 → Simplex
+        assertEquals(Arrays.asList("Simplex", "Numerico"), AnalizadorProblema.recomendarAlgoritmos("Max",
+                "7x11+6x12+9.4x22", Arrays.asList("4x11<=2000", "5x12+2x22<=10000")));
+    }
+
     /** Caso real reportado con qwen2.5:3b: montos en pesos, una variable a la derecha y sin algoritmos. */
     @Test
     void casoCampanaPublicitaria() {

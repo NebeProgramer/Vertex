@@ -23,6 +23,16 @@ public class MetodoGrafico extends javax.swing.JFrame implements MetodoPL {
      * Creates new form MetodoGrafico
      */
     
+    /** Nombres a mostrar (xij originales); identidad = x1, x2, como siempre. */
+    private com.mycompany.problema.programacion.lineal.parser.MapeoVariables mapeo
+            = com.mycompany.problema.programacion.lineal.parser.MapeoVariables.identidad();
+
+    @Override
+    public void setNombresVariables(com.mycompany.problema.programacion.lineal.parser.MapeoVariables mapeo) {
+        this.mapeo = mapeo;
+        grafico.setNombresEjes(mapeo.nombreDe(1), mapeo.nombreDe(2));
+    }
+
     @Override
     public void resolver(String FO, String[] R, String tipo) {
         calculos(FO, R, tipo);
@@ -340,8 +350,8 @@ public class MetodoGrafico extends javax.swing.JFrame implements MetodoPL {
             List<double[]> poligono = ordenarPoligono(puntosValidos);
             grafico.mostrarResultado(Rmat, poligono, puntosFactibles, mejorPunto, mejorZ, true);
 
-            txtResultado.setText("Solución óptima:   \nx1 = " + FormatoNumero.fmt(mejorPunto[0])
-                    + "    \nx2 = " + FormatoNumero.fmt(mejorPunto[1])
+            txtResultado.setText("Solución óptima:   \n" + mapeo.nombreDe(1) + " = " + FormatoNumero.fmt(mejorPunto[0])
+                    + "    \n" + mapeo.nombreDe(2) + " = " + FormatoNumero.fmt(mejorPunto[1])
                     + "    \nZ = " + FormatoNumero.fmt(mejorZ));
 
         } else {

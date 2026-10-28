@@ -385,7 +385,8 @@ public class AnalizadorProblema {
     /**
      * Mismas reglas que habilitan cada casilla del selector
      * (PrincipalPage.motivoIncompatible), en orden de preferencia:
-     * xij → Húngaro (asignación) o Costos Dual (transporte); xi → Gráfico
+     * xij con estructura de asignación → Húngaro, de transporte → Costos
+     * Dual (cualquier otro xij se trata como PL general); xi → Gráfico
      * con 2 variables, Simplex si todo es "<=" con lado derecho ≥ 0, Big M
      * si hay ">=" o "=", Simplex Dual para Min con solo ">=" (o lado
      * derecho negativo) y Numérico como respaldo cuando el problema es
@@ -407,8 +408,14 @@ public class AnalizadorProblema {
         int longitud = indices.get(0).length();
         boolean dobleIndice = longitud % 2 == 0
                 && indices.stream().allMatch(i -> i.length() == longitud);
-        if (dobleIndice) {
-            metodos.add(esAsignacion(restricciones) ? "Hungaro" : "Costos Dual");
+        // xij solo va a Húngaro/Costos Dual si tiene esa estructura; si no, es
+        // PL general escrita con doble índice y sigue las reglas de abajo
+        if (dobleIndice && esAsignacion(restricciones)) {
+            metodos.add("Hungaro");
+            return metodos;
+        }
+        if (dobleIndice && esTransporte(restricciones, longitud / 2)) {
+            metodos.add("Costos Dual");
             return metodos;
         }
 
@@ -441,6 +448,32 @@ public class AnalizadorProblema {
             metodos.add("Numerico");
         }
         return metodos;
+    }
+
+    /**
+     * Transporte: cada restricción suma, con coeficiente 1, una fila (mismo
+     * origen i) o una columna (mismo destino j) de xij, con lado derecho >= 0.
+     */
+    private static boolean esTransporte(List<String> restricciones, int mitad) {
+        for (String r : restricciones) {
+            Restriccion rest = Restriccion.leer(r);
+            if (rest == null || rest.coeficientes.isEmpty() || rest.ladoDerecho.signum() < 0) {
+                return false;
+            }
+            java.util.Set<String> filas = new java.util.HashSet<>();
+            java.util.Set<String> columnas = new java.util.HashSet<>();
+            for (Map.Entry<String, BigDecimal> e : rest.coeficientes.entrySet()) {
+                if (e.getValue().compareTo(BigDecimal.ONE) != 0) {
+                    return false;
+                }
+                filas.add(e.getKey().substring(0, mitad));
+                columnas.add(e.getKey().substring(mitad));
+            }
+            if (filas.size() != 1 && columnas.size() != 1) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean esAsignacion(List<String> restricciones) {

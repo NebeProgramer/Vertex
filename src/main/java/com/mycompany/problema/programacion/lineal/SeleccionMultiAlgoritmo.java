@@ -183,9 +183,18 @@ public class SeleccionMultiAlgoritmo {
         selector.setText(resumen);
     }
 
+    /**
+     * Sincroniza el combo oculto que lee Calcular. Un Integer es un índice
+     * (0 = "Decide por mi"): setSelectedItem(0) no hace nada en un combo de
+     * textos y dejaba seleccionado el algoritmo anterior.
+     */
     private void cambiarCombo(Object valor) {
         actualizandoCombo = true;
-        comboOriginal.setSelectedItem(valor);
+        if (valor instanceof Integer) {
+            comboOriginal.setSelectedIndex((Integer) valor);
+        } else {
+            comboOriginal.setSelectedItem(valor);
+        }
         actualizandoCombo = false;
     }
 

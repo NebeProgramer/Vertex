@@ -25,4 +25,12 @@ public interface MetodoPL {
 
     /** Muestra la ventana con el resultado ya calculado. */
     void mostrar();
+
+    /**
+     * Nombres con que mostrar las variables cuando el problema se tradujo de
+     * xij a x1..xn (ver MapeoVariables). Llamar antes de {@link #resolver}.
+     * Por defecto no hace nada: Húngaro y Costos Duales ya trabajan con xij.
+     */
+    default void setNombresVariables(com.mycompany.problema.programacion.lineal.parser.MapeoVariables mapeo) {
+    }
 }

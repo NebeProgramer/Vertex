@@ -46,6 +46,15 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
     private String resultadoTexto;
     private int[] filaEstado; // por fila: 0 = infactible/singular (rojo), 1 = factible (verde lima), 2 = óptima (verde bosque)
 
+    /** Nombres a mostrar (xij originales); identidad = "x" + k, como siempre. */
+    private com.mycompany.problema.programacion.lineal.parser.MapeoVariables mapeo
+            = com.mycompany.problema.programacion.lineal.parser.MapeoVariables.identidad();
+
+    @Override
+    public void setNombresVariables(com.mycompany.problema.programacion.lineal.parser.MapeoVariables mapeo) {
+        this.mapeo = mapeo;
+    }
+
     @Override
     public void resolver(String FO, String[] R, String tipo) {
         calculos(FO, R, tipo);
@@ -228,7 +237,7 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
 
         varNames = new String[n];
         for (int k = 0; k < numVars; k++) {
-            varNames[k] = "x" + ordered.get(k);
+            varNames[k] = mapeo.nombreDe(ordered.get(k));
         }
         double[][] Amp = new double[m][n]; // matriz ampliada [decisión | holguras | excesos]
         int colLibre = numVars;

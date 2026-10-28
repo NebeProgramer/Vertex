@@ -57,6 +57,15 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
     private int[][] auxMatActual;
 
     
+    /** Nombres a mostrar (xij originales); identidad = "x" + k, como siempre. */
+    private com.mycompany.problema.programacion.lineal.parser.MapeoVariables mapeo
+            = com.mycompany.problema.programacion.lineal.parser.MapeoVariables.identidad();
+
+    @Override
+    public void setNombresVariables(com.mycompany.problema.programacion.lineal.parser.MapeoVariables mapeo) {
+        this.mapeo = mapeo;
+    }
+
     @Override
     public void resolver(String FO, String[] R, String tipo) {
         calculos(FO, R, tipo);
@@ -297,7 +306,7 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
         varNames = new String[totalVars];
         esArtificial = new boolean[totalVars];
         for (int k = 0; k < numVars; k++) {
-            varNames[k] = "x" + ordered.get(k);
+            varNames[k] = mapeo.nombreDe(ordered.get(k));
         }
 
         int totalCols = totalVars + 1; // + RHS

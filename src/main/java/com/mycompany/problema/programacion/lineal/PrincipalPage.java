@@ -10,6 +10,7 @@ import java.util.regex.*;
 import java.util.*;
 import java.util.prefs.Preferences;
 import com.mycompany.problema.programacion.lineal.parser.ParserLP;
+import com.mycompany.problema.programacion.lineal.parser.MapeoVariables;
 import com.mycompany.problema.programacion.lineal.algoritmos.MetodoPL;
 
 /**
@@ -359,67 +360,140 @@ public class PrincipalPage extends javax.swing.JFrame {
     }
 
     /**
-     * Reglas del selector múltiple. Primero el formato de variables que
-     * exige cada algoritmo (xi vs xij) contra el detectado en Z; luego las
-     * condiciones estructurales de cada método (sin pair(), que modifica
-     * FO/R). Con Z vacía solo se impide mezclar familias entre sí.
-     * Devuelve null si es compatible, o el motivo para el tooltip.
+     * Reglas del selector: cada casilla se habilita según la ESTRUCTURA del
+     * problema escrito (cantidad de variables, operadores, lados derechos,
+     * asignación/transporte), no según cómo se llaman las variables: para
+     * los métodos de PL general los nombres son etiquetas (ver planoPara).
+     * Solo Húngaro y Costos Duales exigen xij, porque leen origen y destino.
+     * Sin pair(), que modifica FO/R. Devuelve null si es compatible, o el
+     * motivo para el tooltip. Los algoritmos ya marcados no restringen a los
+     * demás: si dos aplican al problema, se pueden combinar.
      */
     private String motivoIncompatible(String nombreAlgoritmo, List<String> seleccionados) {
-        FamiliaFormato familiaCandidata = familiaFormato(nombreAlgoritmo);
-        String fo = ObjetiveFunction.getText().replaceAll("\\s+", "");
-        FamiliaFormato formatoProblema = formatoProblema(fo);
-
-        if (formatoProblema == FamiliaFormato.GENERAL) {
-            for (String seleccionado : seleccionados) {
-                FamiliaFormato familia = familiaFormato(seleccionado);
-                if (familia != FamiliaFormato.GENERAL && familiaCandidata != FamiliaFormato.GENERAL
-                        && familia != familiaCandidata) {
-                    return "No se puede combinar con " + seleccionado + " (otro formato de variables)";
+        PerfilProblema p = perfilProblema();
+        if (p.variables == 0) {
+            return null; // todavía no hay nada escrito que evaluar
+        }
+        switch (nombreAlgoritmo) {
+            case "Grafico":
+                return p.variables == 2 ? null : "Requiere exactamente 2 variables (hay " + p.variables + ")";
+            case "Simplex":
+                return (p.hayMayorIgual || p.hayIgual)
+                        ? "Solo restricciones <= (para >= o = usa Big M)" : null;
+            case "Big M":
+                return (p.hayMayorIgual || p.hayIgual)
+                        ? null : "Requiere alguna restricción >= o = (si no, usa Simplex)";
+            case "Simplex Dual":
+                if (p.hayIgual) {
+                    return "No admite restricciones = (usa Big M)";
                 }
-            }
-            return null;
+                return (p.hayMayorIgual || p.hayRhsNegativo)
+                        ? null : "Requiere restricciones >= o lado derecho negativo";
+            case "Numerico":
+                if (p.variablesNumerico > MAX_VARS_NUMERICO) {
+                    return "Demasiado grande para el Numérico: " + p.variablesNumerico
+                            + " variables contando holguras y excesos (máximo " + MAX_VARS_NUMERICO + ")";
+                }
+                return p.variablesNumerico < p.restricciones
+                        ? "Hay más restricciones que variables: el Numérico no puede formar bases" : null;
+            case "Hungaro":
+                if (p.motivoXij != null) {
+                    return p.motivoXij;
+                }
+                return p.asignacion ? null : "Requiere estructura de asignación (Σxij = 1 por fila y columna)";
+            case "Costos Dual":
+                if (p.motivoXij != null) {
+                    return p.motivoXij;
+                }
+                return p.transporte ? null
+                        : "Requiere estructura de transporte (cada restricción suma una fila o una columna de xij)";
+            default:
+                return null;
         }
-        if (familiaCandidata != FamiliaFormato.GENERAL && familiaCandidata != formatoProblema) {
-            return familiaCandidata == FamiliaFormato.VECTOR
-                    ? "Requiere variables xi (x1, x2, ...)"
-                    : "Requiere variables xij (x11, x12, ...)";
-        }
+    }
 
+    /** Mismo tope que MetodoNumerico: C(n, m) bases crece demasiado rápido. */
+    private static final int MAX_VARS_NUMERICO = 18;
+
+    /** Lo que el selector necesita saber del problema escrito, calculado una vez por consulta. */
+    private static final class PerfilProblema {
+
+        int variables;          // distintas, entre Z y restricciones
+        int restricciones;
+        int variablesNumerico;  // decisión + holguras + excesos (lo que enumera el Numérico)
+        boolean hayMayorIgual, hayIgual, hayRhsNegativo;
+        String motivoXij;       // null si los nombres sirven como xij (origen, destino)
+        boolean asignacion, transporte;
+    }
+
+    private PerfilProblema perfilProblema() {
+        PerfilProblema p = new PerfilProblema();
+        String fo = ObjetiveFunction.getText().replaceAll("\\s+", "");
         String[] restricciones = restriccionesValidas();
-        boolean hayMayorIgual = false, hayIgual = false, hayRhsNegativo = false;
+
+        Set<String> variables = new HashSet<>();
+        Matcher m = Pattern.compile("x(\\d+)", Pattern.CASE_INSENSITIVE).matcher(fo + " " + String.join(" ", restricciones));
+        while (m.find()) {
+            variables.add(m.group(1));
+        }
+        p.variables = variables.size();
+        p.restricciones = restricciones.length;
+        p.variablesNumerico = p.variables;
         for (String r : restricciones) {
             String[] partes = parseRestriction(r);
-            hayMayorIgual |= partes[1].equals(">=");
-            hayIgual |= partes[1].equals("=");
+            p.hayMayorIgual |= partes[1].equals(">=");
+            p.hayIgual |= partes[1].equals("=");
+            if (!partes[1].equals("=")) {
+                p.variablesNumerico++; // holgura o exceso
+            }
             try {
-                hayRhsNegativo |= Double.parseDouble(partes[2]) < 0;
+                p.hayRhsNegativo |= Double.parseDouble(partes[2]) < 0;
             } catch (NumberFormatException ex) {
                 // lado derecho incompleto mientras se escribe
             }
         }
 
-        switch (nombreAlgoritmo) {
-            case "Grafico":
-                return checkGrafico(restricciones, fo, 0) ? null : "Requiere exactamente 2 variables";
-            case "Simplex":
-                return (hayMayorIgual || hayIgual)
-                        ? "Solo restricciones <= (para >= o = usa Big M)" : null;
-            case "Big M":
-                return (hayMayorIgual || hayIgual)
-                        ? null : "Requiere alguna restricción >= o = (si no, usa Simplex)";
-            case "Simplex Dual":
-                if (hayIgual) {
-                    return "No admite restricciones = (usa Big M)";
-                }
-                return (hayMayorIgual || hayRhsNegativo)
-                        ? null : "Requiere restricciones >= o lado derecho negativo";
-            case "Hungaro":
-                return checkHungaro(restricciones, fo, 0)
-                        ? null : "Requiere estructura de asignación (Σxij = 1 por fila y columna)";
-            default:
-                return null;
+        try {
+            MapeoVariables.traducirDobleIndice(fo, restricciones);
+        } catch (IllegalArgumentException ex) {
+            // el caso común (x1, x2...) no necesita más explicación; los raros (x10, x11 y x123) sí
+            boolean simples = variables.stream().allMatch(v -> v.length() % 2 != 0);
+            p.motivoXij = "Requiere variables xij (x11, x12, ...)" + (simples ? "" : ": " + ex.getMessage());
         }
+        if (p.motivoXij == null) {
+            p.asignacion = checkHungaro(restricciones, fo, 0);
+            p.transporte = estructuraTransporte(restricciones, variables.iterator().next().length() / 2);
+        }
+        return p;
+    }
+
+    /**
+     * Transporte: cada restricción suma, con coeficiente 1, una fila (mismo
+     * origen i) o una columna (mismo destino j) de xij. Es lo que leen
+     * ParserTransporte (oferta y demanda) y AlgoritmoCostosDuales.
+     */
+    private static boolean estructuraTransporte(String[] restricciones, int mitad) {
+        if (restricciones.length == 0) {
+            return false;
+        }
+        Pattern termino = Pattern.compile("([+-]?\\d*\\.?\\d*)x(\\d+)", Pattern.CASE_INSENSITIVE);
+        for (String r : restricciones) {
+            Matcher t = termino.matcher(parseRestriction(r)[0]);
+            Set<String> filas = new HashSet<>();
+            Set<String> columnas = new HashSet<>();
+            while (t.find()) {
+                String coef = t.group(1);
+                if (!(coef.isEmpty() || coef.equals("+") || coef.equals("1") || coef.equals("+1"))) {
+                    return false;
+                }
+                filas.add(t.group(2).substring(0, mitad));
+                columnas.add(t.group(2).substring(mitad));
+            }
+            if (filas.isEmpty() || (filas.size() != 1 && columnas.size() != 1)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** Restricciones escritas que ya se pueden parsear (ignora líneas a medio escribir). */
@@ -437,47 +511,6 @@ public class PrincipalPage extends javax.swing.JFrame {
             }
         }
         return validas.toArray(new String[0]);
-    }
-
-    /**
-     * Detecta el formato de variables de Z: xij si todos los subíndices
-     * tienen la misma longitud par (x11, x23, x0102...); xi en cualquier
-     * otro caso (x1, x2, x10...). GENERAL si todavía no hay variables.
-     */
-    private FamiliaFormato formatoProblema(String fo) {
-        Matcher m = Pattern.compile("x(\\d+)", Pattern.CASE_INSENSITIVE).matcher(fo);
-        int longitud = -1;
-        while (m.find()) {
-            int l = m.group(1).length();
-            if (longitud == -1) {
-                longitud = l;
-            } else if (l != longitud) {
-                return FamiliaFormato.VECTOR;
-            }
-        }
-        if (longitud == -1) {
-            return FamiliaFormato.GENERAL;
-        }
-        return longitud % 2 == 0 ? FamiliaFormato.PAREJAS : FamiliaFormato.VECTOR;
-    }
-
-    private FamiliaFormato familiaFormato(String nombreAlgoritmo) {
-        switch (nombreAlgoritmo) {
-            case "Grafico":
-            case "Simplex":
-            case "Big M":
-            case "Simplex Dual": // AlgoritmoDual lee x1, x2... como índices simples
-                return FamiliaFormato.VECTOR;
-            case "Costos Dual":
-            case "Hungaro":
-                return FamiliaFormato.PAREJAS;
-            default:
-                return FamiliaFormato.GENERAL;
-        }
-    }
-
-    private enum FamiliaFormato {
-        VECTOR, PAREJAS, GENERAL
     }
 
     /** Crea una instancia nueva del algoritmo por nombre, para MultiCalculos. */
@@ -758,9 +791,18 @@ public class PrincipalPage extends javax.swing.JFrame {
             if (seleccionMulti.isModoMultiActivo()) {
                 java.util.List<String> elegidos = seleccionMulti.getSeleccionados();
                 java.util.List<com.mycompany.problema.programacion.lineal.algoritmos.MetodoPL> resueltos = new java.util.ArrayList<>();
+                ProblemaPlano plano = null;
                 for (String nombre : elegidos) {
                     com.mycompany.problema.programacion.lineal.algoritmos.MetodoPL instancia = crearInstancia(nombre);
-                    instancia.resolver(FO, R, tipo);
+                    if (usaMatrizXij(nombre)) {
+                        instancia.resolver(FO, R, tipo);
+                    } else {
+                        if (plano == null) {
+                            plano = planoPara(FO, R);
+                        }
+                        instancia.setNombresVariables(plano.mapeo);
+                        instancia.resolver(plano.fo, plano.r, tipo);
+                    }
                     resueltos.add(instancia);
                 }
                 new MultiCalculos(resueltos, elegidos).setVisible(true);
@@ -769,7 +811,11 @@ public class PrincipalPage extends javax.swing.JFrame {
             }
 
             int metodo;
-            switch (AlgoritmoBox.getSelectedIndex()) {
+            int indiceAlgoritmo = AlgoritmoBox.getSelectedIndex();
+            // Para los algoritmos de PL general (índices 1-5): el problema en x1..xn
+            // (traducido si venía en xij). FO y R quedan intactos para el historial.
+            ProblemaPlano p = (indiceAlgoritmo >= 1 && indiceAlgoritmo <= 5) ? planoPara(FO, R) : null;
+            switch (indiceAlgoritmo) {
                 case 0:
                     // interpretar el algoritmo a usar según las características del problema
                     metodo = 0;
@@ -783,63 +829,68 @@ public class PrincipalPage extends javax.swing.JFrame {
                     } else if (checkCostosDuales(R, FO, metodo)) {
                         resolverYMostrar(new AlgoritmoCostosDuales(), FO, R, tipo, "Costos Dual");
 
+                    } else {
+                        // el resto de la cadena es PL general: con xij, se traduce una vez
+                        p = planoPara(FO, R);
+
                         // 3. Método Dual Simplex
                         // Condición: solución inicial primal no factible pero dual sí factible
-                    } else if (checkDualSimplex(R, FO, metodo)) {
-                        resolverYMostrar(new AlgoritmoDual(), FO, R, tipo, "Simplex Dual");
+                        if (checkDualSimplex(p.r, p.fo, metodo)) {
+                            resolverYMostrar(new AlgoritmoDual(), p, tipo, "Simplex Dual");
 
-                        // 4. Método Gráfico
-                        // Condición: 2 variables en FO y restricciones lineales
-                    } else if (checkGrafico(R, FO, metodo)) {
-                        resolverYMostrar(new MetodoGrafico(), FO, R, tipo, "Grafico");
+                            // 4. Método Gráfico
+                            // Condición: 2 variables en FO y restricciones lineales
+                        } else if (checkGrafico(p.r, p.fo, metodo)) {
+                            resolverYMostrar(new MetodoGrafico(), p, tipo, "Grafico");
 
-                        // 5. Método Big-M
-                        // Condición: existen restricciones con ≥ o = y término independiente ≠ 0
-                    } else if (checkBigM(R, FO, metodo)) {
-                        resolverYMostrar(new MetodoBigM(), FO, R, tipo, "Big M");
+                            // 5. Método Big-M
+                            // Condición: existen restricciones con ≥ o = y término independiente ≠ 0
+                        } else if (checkBigM(p.r, p.fo, metodo)) {
+                            resolverYMostrar(new MetodoBigM(), p, tipo, "Big M");
 
-                        // 6. Método Simplex
-                        // Condición: siempre aplica, caso general
-                    } else if (checkSimplex(R, FO, metodo)) {
-                        resolverYMostrar(new MetodoSimplex(), FO, R, tipo, "Simplex");
+                            // 6. Método Simplex
+                            // Condición: siempre aplica, caso general
+                        } else if (checkSimplex(p.r, p.fo, metodo)) {
+                            resolverYMostrar(new MetodoSimplex(), p, tipo, "Simplex");
 
-                        // 7. Método Numérico (fallback)
-                        // Condición: casos especiales o pruebas numéricas
-                    } else {
-                        resolverYMostrar(new MetodoNumerico(), FO, R, tipo, "Numerico");
+                            // 7. Método Numérico (fallback)
+                            // Condición: casos especiales o pruebas numéricas
+                        } else {
+                            resolverYMostrar(new MetodoNumerico(), p, tipo, "Numerico");
+                        }
                     }
                     //Decide por mi, Grafico, Numerico, Simplex, Big M, Simplex Dual, Costos Dual, Hungaro
                     break;
                 case 1:
                     metodo = 1;
-                    if (checkGrafico(R, FO, metodo)) {
-                        resolverYMostrar(new MetodoGrafico(), FO, R, tipo, "Grafico");
+                    if (checkGrafico(p.r, p.fo, metodo)) {
+                        resolverYMostrar(new MetodoGrafico(), p, tipo, "Grafico");
                     } else {
-                        ofrecerFallbackSimplex("El problema no cumple condiciones para un método especializado.", FO, R, tipo);
+                        ofrecerFallbackSimplex("El problema no cumple condiciones para un método especializado.", p, tipo);
                     }
                     break;
                 case 2:
                     metodo = 2;
-                    resolverYMostrar(new MetodoNumerico(), FO, R, tipo, "Numerico");
+                    resolverYMostrar(new MetodoNumerico(), p, tipo, "Numerico");
                     break;
                 case 3:
                     metodo = 3;
-                    resolverYMostrar(new MetodoSimplex(), FO, R, tipo, "Simplex");
+                    resolverYMostrar(new MetodoSimplex(), p, tipo, "Simplex");
                     break;
                 case 4:
                     metodo = 4;
-                    if (checkBigM(R, FO, metodo)) {
-                        resolverYMostrar(new MetodoBigM(), FO, R, tipo, "Big M");
+                    if (checkBigM(p.r, p.fo, metodo)) {
+                        resolverYMostrar(new MetodoBigM(), p, tipo, "Big M");
                     } else {
-                        ofrecerFallbackSimplex("El problema no cumple condiciones para Big M.", FO, R, tipo);
+                        ofrecerFallbackSimplex("El problema no cumple condiciones para Big M.", p, tipo);
                     }
                     break;
                 case 5:
                     metodo = 5;
-                    if (checkDualSimplex(R, FO, metodo)) {
-                        resolverYMostrar(new AlgoritmoDual(), FO, R, tipo, "Simplex Dual");
+                    if (checkDualSimplex(p.r, p.fo, metodo)) {
+                        resolverYMostrar(new AlgoritmoDual(), p, tipo, "Simplex Dual");
                     } else {
-                        ofrecerFallbackSimplex("El problema no cumple condiciones para el Simplex Dual.", FO, R, tipo);
+                        ofrecerFallbackSimplex("El problema no cumple condiciones para el Simplex Dual.", p, tipo);
                     }
                     break;
                 case 6:
@@ -877,8 +928,18 @@ public class PrincipalPage extends javax.swing.JFrame {
         ultimoMetodoResuelto = nombreMetodo;
     }
 
+    /** Igual que el anterior, pero mostrando las variables con sus nombres originales (xij). */
+    private void resolverYMostrar(MetodoPL metodo, ProblemaPlano plano, String tipo, String nombreMetodo) {
+        metodo.setNombresVariables(plano.mapeo);
+        resolverYMostrar(metodo, plano.fo, plano.r, tipo, nombreMetodo);
+    }
+
     /** Pregunta si se quiere resolver con Simplex cuando el método elegido no aplica, y lo corre si acepta. */
     private void ofrecerFallbackSimplex(String motivo, String FO, String[] R, String tipo) {
+        ofrecerFallbackSimplex(motivo, new ProblemaPlano(FO, R, MapeoVariables.identidad()), tipo);
+    }
+
+    private void ofrecerFallbackSimplex(String motivo, ProblemaPlano plano, String tipo) {
         int opcion = JOptionPane.showConfirmDialog(
                 this,
                 motivo + "\n¿Desea resolverlo con Simplex?",
@@ -887,8 +948,41 @@ public class PrincipalPage extends javax.swing.JFrame {
                 JOptionPane.QUESTION_MESSAGE
         );
         if (opcion == JOptionPane.YES_OPTION) {
-            resolverYMostrar(new MetodoSimplex(), FO, R, tipo, "Simplex");
+            resolverYMostrar(new MetodoSimplex(), plano, tipo, "Simplex");
         }
+    }
+
+    /** Problema listo para un algoritmo de PL general: en x1..xn y con los nombres a mostrar. */
+    private static final class ProblemaPlano {
+
+        final String fo;
+        final String[] r;
+        final MapeoVariables mapeo;
+
+        ProblemaPlano(String fo, String[] r, MapeoVariables mapeo) {
+            this.fo = fo;
+            this.r = r;
+            this.mapeo = mapeo;
+        }
+    }
+
+    /**
+     * Para Simplex, Big M, Dual, Gráfico y Numérico los nombres son
+     * etiquetas: si no son x1..xn seguidas (xij, x10 y x20, x5 y x7...), se
+     * numeran x1..xn y cada ventana muestra el nombre original. Si ya lo
+     * son, devuelve los mismos FO y R, así que esos problemas no cambian.
+     */
+    private ProblemaPlano planoPara(String FO, String[] R) {
+        MapeoVariables.Traduccion t = MapeoVariables.compactar(FO, R);
+        if (t.getMapeo().esIdentidad()) {
+            return new ProblemaPlano(FO, R, MapeoVariables.identidad());
+        }
+        return new ProblemaPlano(t.getFOPlano(), t.getRPlano(), t.getMapeo());
+    }
+
+    /** Húngaro y Costos Duales leen xij como matriz origen/destino: reciben el problema sin traducir. */
+    private static boolean usaMatrizXij(String nombreAlgoritmo) {
+        return "Hungaro".equals(nombreAlgoritmo) || "Costos Dual".equals(nombreAlgoritmo);
     }
 
     private void RestrictionsKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_RestrictionsKeyTyped
@@ -961,25 +1055,22 @@ public class PrincipalPage extends javax.swing.JFrame {
         Pattern varPattern = Pattern.compile("x(\\d+)", Pattern.CASE_INSENSITIVE);
         Set<Integer> foVars = new HashSet<>();
         Set<Integer> restrVars = new HashSet<>();
-        Set<Integer> formatos = new HashSet<>();
 
         Matcher mFO = varPattern.matcher(FO);
         while (mFO.find()) {
             foVars.add(Integer.valueOf(mFO.group(1)));
-            formatos.add(mFO.group(1).length());
         }
 
         for (String restr : R) {
             Matcher mR = varPattern.matcher(restr);
             while (mR.find()) {
                 restrVars.add(Integer.valueOf(mR.group(1)));
-                formatos.add(mR.group(1).length());
             }
         }
 
-        if (formatos.size() > 1) {
-            throw new IllegalArgumentException("Inconsistencia en las variables: mezcla de índices con distinta longitud.");
-        }
+        // Índices de distinta longitud (x3 y x15, x1..x12) ya no son un error:
+        // para la PL general los nombres son etiquetas (ver planoPara), y
+        // Húngaro/Costos Duales validan su formato xij por su cuenta.
 
         // Variables definidas por FO (todas deben aparecer en FO)
         List<Integer> orderedVars = new ArrayList<>(foVars);
