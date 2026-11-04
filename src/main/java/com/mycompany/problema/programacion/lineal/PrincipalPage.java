@@ -258,6 +258,28 @@ public class PrincipalPage extends javax.swing.JFrame {
         }
     }
 
+    /** Firma discreta "Un producto ND" bajo el logo de Vertex (ND Studios). */
+    private javax.swing.JPanel crearFirmaMarca() {
+        javax.swing.JPanel firma = new javax.swing.JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 4, 0));
+        firma.setOpaque(false);
+        firma.setBorder(javax.swing.BorderFactory.createEmptyBorder(4, 0, 0, 0));
+        javax.swing.JLabel texto = new javax.swing.JLabel("Un producto");
+        texto.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 11));
+        texto.setForeground(new java.awt.Color(120, 132, 146));
+        firma.add(texto);
+        javax.swing.ImageIcon marca = Recursos.obtenerMarcaND(12);
+        javax.swing.JLabel logo = marca != null ? new javax.swing.JLabel(marca) : new javax.swing.JLabel("ND Studios");
+        if (marca == null) {
+            logo.setFont(texto.getFont().deriveFont(java.awt.Font.BOLD));
+            logo.setForeground(texto.getForeground());
+        }
+        firma.add(logo);
+        firma.setToolTipText("ND Studios");
+        texto.setToolTipText("ND Studios");
+        logo.setToolTipText("ND Studios");
+        return firma;
+    }
+
     /** Selector de pantalla tipo segmentado, al lado del logo. */
     private javax.swing.JPanel crearPestanas() {
         tabEditor = crearPestana("Editor", "Escribe Z y las restricciones a mano");
@@ -559,6 +581,7 @@ public class PrincipalPage extends javax.swing.JFrame {
             javax.swing.BorderFactory.createLineBorder(new java.awt.Color(220, 226, 234)),
             javax.swing.BorderFactory.createEmptyBorder(8, 16, 8, 16)));
         tarjetaLogo.add(lblLogo, java.awt.BorderLayout.CENTER);
+        tarjetaLogo.add(crearFirmaMarca(), java.awt.BorderLayout.SOUTH);
         javax.swing.JPanel barraSuperior = new javax.swing.JPanel(new java.awt.FlowLayout(
             java.awt.FlowLayout.LEFT, 16, 16));
         barraSuperior.setOpaque(false);

@@ -4,6 +4,8 @@ Aplicación de escritorio en Java para modelar y resolver problemas de optimizac
 
 ![Logo de Vertex](/src/main/resources/vertex-logo.png)
 
+Un producto de **[ND Studios](#nd-studios)**.
+
 ## Descarga
 
 No hace falta compilar nada para usar Vertex: solo necesitas tener **Java 17 o superior** instalado (JRE es suficiente). Elige la forma que prefieras:
@@ -266,6 +268,7 @@ src/
 │   │   └── SimplexExamples.txt
 │   │
 │   └── resources/
+│       ├── ND-Studios-logos/   (logos de la marca, en PNG y SVG)
 │       ├── ia/prompt-sistema.txt
 │       ├── vertex-logo.png
 │       ├── vertex-icon.png
@@ -279,6 +282,15 @@ Las notas de cada versión, con el detalle de qué cambió y por qué, están en
 ## Estado del proyecto
 
 Hay pruebas automatizadas para la conversión de texto libre a modelo (`src/test`, se ejecutan con `mvn test`), pero todavía no para los algoritmos. Si vas a reutilizar el código, verifica los resultados con casos de prueba conocidos.
+
+## ND Studios
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="src/main/resources/ND-Studios-logos/png/nd-studios-dark.png">
+  <img src="src/main/resources/ND-Studios-logos/png/nd-studios-light.png" alt="Logo de ND Studios" width="140">
+</picture>
+
+Vertex es un producto de **ND Studios**. Dentro de la aplicación, la firma *Un producto ND* aparece bajo el logo de Vertex, en la pantalla principal.
 
 ## Licencia
 

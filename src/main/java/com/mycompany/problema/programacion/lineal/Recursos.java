@@ -83,6 +83,40 @@ public final class Recursos {
         return new ImageIcon(escalado);
     }
 
+    /**
+     * Logo "ND" de ND Studios a una altura fija, para la firma "Un producto"
+     * de la pantalla principal. Se escala a 1x y 2x para que se vea nítido
+     * también con el escalado de pantalla de Windows (125 %, 150 %...).
+     * Devuelve null si el recurso no se pudo cargar.
+     */
+    public static ImageIcon obtenerMarcaND(int altoPx) {
+        URL url = Recursos.class.getResource("/ND-Studios-logos/png/nd-icon-light.png");
+        if (url == null) {
+            return null;
+        }
+        try {
+            java.awt.image.BufferedImage original = javax.imageio.ImageIO.read(url);
+            int ancho = Math.round(altoPx * original.getWidth() / (float) original.getHeight());
+            Image x1 = escalarSuave(original, ancho, altoPx);
+            Image x2 = escalarSuave(original, ancho * 2, altoPx * 2);
+            return new ImageIcon(new java.awt.image.BaseMultiResolutionImage(x1, x2));
+        } catch (java.io.IOException ex) {
+            return null;
+        }
+    }
+
+    private static Image escalarSuave(Image original, int ancho, int alto) {
+        java.awt.image.BufferedImage destino = new java.awt.image.BufferedImage(ancho, alto,
+                java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        java.awt.Graphics2D g = destino.createGraphics();
+        g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
+        // getScaledInstance(SMOOTH) promedia bien al reducir mucho (1200 px → 14 px)
+        g.drawImage(original.getScaledInstance(ancho, alto, Image.SCALE_SMOOTH), 0, 0, null);
+        g.dispose();
+        return destino;
+    }
+
     /** Aplica el ícono de la app a una ventana; no hace nada si el recurso no se pudo cargar. */
     public static void aplicarIcono(java.awt.Window ventana) {
         Image icono = obtenerIcono();
