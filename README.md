@@ -4,7 +4,7 @@ Aplicación de escritorio en Java para modelar y resolver problemas de optimizac
 
 ![Logo de Vertex](/src/main/resources/vertex-logo.png)
 
-Un producto de **[ND Studios](#nd-studios)**.
+Un producto **[ND Studios](#nd-studios)**.
 
 ## Descarga
 
