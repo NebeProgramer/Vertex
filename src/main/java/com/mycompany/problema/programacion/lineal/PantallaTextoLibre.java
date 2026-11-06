@@ -41,10 +41,6 @@ import javax.swing.SwingWorker;
  */
 public class PantallaTextoLibre extends JPanel {
 
-    private static final Color TINTA = new Color(23, 45, 66);
-    private static final Color ACENTO = new Color(68, 56, 208);
-    private static final Color BORDE = new Color(220, 226, 234);
-    private static final Color GRIS = new Color(95, 108, 123);
     private static final Color VERDE = new Color(40, 150, 70);
     private static final Color ROJO = new Color(200, 60, 60);
     private static final Color AMBAR = new Color(200, 130, 20);
@@ -66,7 +62,7 @@ public class PantallaTextoLibre extends JPanel {
             java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
             g2.setRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING,
                     java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            g2.setColor(new Color(150, 160, 172));
+            g2.setColor(Tema.textoSuave());
             g2.setFont(getFont());
             java.awt.FontMetrics fm = g2.getFontMetrics();
             Insets in = getInsets();
@@ -121,6 +117,15 @@ public class PantallaTextoLibre extends JPanel {
         add(crearFilaBotones(), gbc);
     }
 
+    /** Enunciado escrito, para conservarlo al cambiar de tema (la ventana se vuelve a crear). */
+    public String getEnunciado() {
+        return enunciado.getText();
+    }
+
+    public void setEnunciado(String texto) {
+        enunciado.setText(texto);
+    }
+
     /** Se llama cada vez que el usuario abre esta pestaña. */
     public void alMostrar() {
         comprobarMotor();
@@ -135,13 +140,13 @@ public class PantallaTextoLibre extends JPanel {
 
         JLabel titulo = new JLabel("Describe tu problema");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        titulo.setForeground(TINTA);
+        titulo.setForeground(Tema.tinta());
         // ancho fijo: sin él, el HTML pide todo el texto en una línea y GridBag
         // cae a los tamaños mínimos en ventanas medianas
         JLabel ayuda = new JLabel("<html><div style='width:700px'>Escríbelo como en un enunciado de clase: qué se"
                 + " quiere maximizar o minimizar, con qué datos y qué límites hay. La IA lo traduce a Z y"
                 + " restricciones, y luego puedes revisarlo en el Editor antes de calcular.</div></html>");
-        ayuda.setForeground(GRIS);
+        ayuda.setForeground(Tema.textoSuave());
         JPanel encabezado = new JPanel(new BorderLayout(0, 4));
         encabezado.setOpaque(false);
         encabezado.add(titulo, BorderLayout.NORTH);
@@ -161,7 +166,7 @@ public class PantallaTextoLibre extends JPanel {
             }
         });
         JScrollPane scroll = new JScrollPane(enunciado);
-        scroll.setBorder(BorderFactory.createLineBorder(new Color(215, 222, 231)));
+        scroll.setBorder(BorderFactory.createLineBorder(Tema.borde()));
         scroll.setPreferredSize(new Dimension(770, 280));
         scroll.setMinimumSize(new Dimension(400, 180));
         tarjeta.add(scroll, BorderLayout.CENTER);
@@ -189,7 +194,7 @@ public class PantallaTextoLibre extends JPanel {
         botonInstalar.addActionListener(e -> abrirDescargaOllama());
         botonDescargar.addActionListener(e -> descargarModelo());
         botonReintentar.addActionListener(e -> comprobarMotor());
-        mostrarEstado("Comprobando motor de IA…", GRIS);
+        mostrarEstado("Comprobando motor de IA…", Tema.textoSuave());
         botonInstalar.setVisible(false);
         botonDescargar.setVisible(false);
         return tarjeta;
@@ -199,7 +204,7 @@ public class PantallaTextoLibre extends JPanel {
         JPanel fila = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
         fila.setOpaque(false);
 
-        botonAnalizar.setBackground(ACENTO);
+        botonAnalizar.setBackground(Tema.acento());
         botonAnalizar.setForeground(Color.WHITE);
         botonAnalizar.setFont(new Font("Segoe UI", Font.BOLD, 16));
         botonAnalizar.setFocusPainted(false);
@@ -226,9 +231,9 @@ public class PantallaTextoLibre extends JPanel {
 
     private static JPanel crearTarjeta() {
         JPanel tarjeta = new JPanel(new BorderLayout(12, 10));
-        tarjeta.setBackground(Color.WHITE);
+        tarjeta.setBackground(Tema.tarjeta());
         tarjeta.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDE),
+                BorderFactory.createLineBorder(Tema.borde()),
                 BorderFactory.createEmptyBorder(14, 16, 14, 16)));
         return tarjeta;
     }
@@ -236,11 +241,11 @@ public class PantallaTextoLibre extends JPanel {
     /** Botón blanco con borde (el botón por defecto de Vertex es el morado de acción principal). */
     static JButton crearBotonSecundario(String texto) {
         JButton b = new JButton(texto);
-        b.setBackground(Color.WHITE);
-        b.setForeground(TINTA);
+        b.setBackground(Tema.tarjeta());
+        b.setForeground(Tema.tinta());
         b.setFocusPainted(false);
-        b.putClientProperty("FlatLaf.style", "hoverBackground: #EEF0FB; pressedBackground: #DDE1F5;"
-                + " borderColor: #CDD5DF");
+        b.putClientProperty("FlatLaf.style", "hoverBackground: " + Tema.hex(Tema.hoverSecundario()) + "; pressedBackground: "
+                + Tema.hex(Tema.hoverSecundario().darker()) + "; borderColor: " + Tema.hex(Tema.borde()));
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return b;
     }
@@ -256,7 +261,7 @@ public class PantallaTextoLibre extends JPanel {
 
     private void comprobarMotor() {
         botonReintentar.setEnabled(false);
-        mostrarEstado("Comprobando motor de IA…", GRIS);
+        mostrarEstado("Comprobando motor de IA…", Tema.textoSuave());
         new SwingWorker<Integer, Void>() {
             @Override
             protected Integer doInBackground() {
@@ -296,7 +301,7 @@ public class PantallaTextoLibre extends JPanel {
     private void mostrarEstado(String texto, Color color) {
         String hex = String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
         estado.setText("<html><span style='color:" + hex + "'>●</span>&nbsp; " + texto + "</html>");
-        estado.setForeground(TINTA);
+        estado.setForeground(Tema.tinta());
     }
 
     private void abrirDescargaOllama() {
@@ -360,7 +365,7 @@ public class PantallaTextoLibre extends JPanel {
         ocupado(true);
         progreso.setVisible(true);
         progreso.setIndeterminate(true);
-        mostrarEstado("Analizando con " + motor.getModelo() + "… (puede tardar unos segundos)", ACENTO);
+        mostrarEstado("Analizando con " + motor.getModelo() + "… (puede tardar unos segundos)", Tema.acento());
 
         SwingWorker<ResultadoAnalisis, Void> trabajo = new SwingWorker<ResultadoAnalisis, Void>() {
             @Override

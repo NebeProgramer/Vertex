@@ -59,7 +59,7 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
                 VentanaAyudaAlgoritmo.TEORIA_HUNGARO);
         Recursos.envolverEnFondoAzul(this);
         Recursos.modernizarVentana(this);
-        instalarRendererColores(TablaTableau);
+        instalarRendererColores(TablaTablero);
     }
 
     /**
@@ -73,16 +73,18 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 setHorizontalAlignment(CENTER);
-                Color fondo = Color.WHITE;
+                Color fondo = Tema.campo();
                 if (auxMatActual != null && row < auxMatActual.length && column < auxMatActual[row].length) {
                     switch (auxMatActual[row][column]) {
                         case 3: fondo = COLOR_CAUSANTE; break;
                         case 2: fondo = COLOR_ASIGNADO; break;
                         case 1: fondo = COLOR_LINEA; break;
-                        default: fondo = Color.WHITE;
+                        default: fondo = Tema.campo();
                     }
                 }
                 c.setBackground(fondo);
+                // los resaltados de la colorimetría son pastel: encima, texto oscuro también en modo oscuro
+                c.setForeground(fondo.equals(Tema.campo()) ? Tema.tinta() : Tema.textoSobreResaltado());
                 return c;
             }
         });
@@ -93,7 +95,7 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
     private void initComponents() {
 
         jScrollPane1 = new javax.swing.JScrollPane();
-        TablaTableau = new javax.swing.JTable();
+        TablaTablero = new javax.swing.JTable();
         btnAnterior = new javax.swing.JButton();
         lblPaso = new javax.swing.JLabel();
         btnSiguiente = new javax.swing.JButton();
@@ -107,10 +109,10 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
         setMinimumSize(new java.awt.Dimension(712, 460));
         setResizable(true);
 
-        TablaTableau.setEnabled(false);
-        TablaTableau.setFont(new java.awt.Font("Consolas", 0, 13)); // NOI18N
-        TablaTableau.setRowHeight(26);
-        jScrollPane1.setViewportView(TablaTableau);
+        TablaTablero.setEnabled(false);
+        TablaTablero.setFont(new java.awt.Font("Consolas", 0, 13)); // NOI18N
+        TablaTablero.setRowHeight(26);
+        jScrollPane1.setViewportView(TablaTablero);
 
         btnAnterior.setText("< Anterior");
         btnAnterior.addActionListener(new java.awt.event.ActionListener() {
@@ -465,7 +467,7 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
                 return false;
             }
         };
-        TablaTableau.setModel(modelo);
+        TablaTablero.setModel(modelo);
 
         String textoPaso = "Tabla " + (idx + 1) + " de " + matricesPasos.size() + (titulo != null ? "  —  " + titulo : "");
         lblPaso.setText("<html><div style='text-align:center;width:350px'>" + textoPaso + "</div></html>");
@@ -475,7 +477,7 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
         if (resultadoTexto != null) {
             txtResultado.setText(resultadoTexto);
         }
-        TablaTableau.repaint();
+        TablaTablero.repaint();
     }
 
     private double[][] cloneMatrix(double[][] original) {
@@ -499,7 +501,7 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTable TablaTableau;
+    private javax.swing.JTable TablaTablero;
     private javax.swing.JButton btnAnterior;
     private javax.swing.JButton btnSiguiente;
     private javax.swing.JScrollPane jScrollPane1;

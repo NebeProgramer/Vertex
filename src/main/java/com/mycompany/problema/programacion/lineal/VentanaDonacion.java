@@ -43,7 +43,7 @@ public class VentanaDonacion extends JDialog {
     private void initComponents() {
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setResizable(false);
-        getContentPane().setBackground(Color.WHITE);
+        getContentPane().setBackground(Tema.tarjeta());
         getContentPane().setLayout(new GridBagLayout());
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -59,14 +59,14 @@ public class VentanaDonacion extends JDialog {
 
         JLabel lblTitulo = new JLabel("Invítame un café", SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        lblTitulo.setForeground(new Color(40, 60, 110));
+        lblTitulo.setForeground(Tema.tinta());
         gbc.gridy = 1;
         gbc.insets = new Insets(4, 30, 12, 30);
         getContentPane().add(lblTitulo, gbc);
 
         JLabel lblVertex = new JLabel("Vertex es gratuito.", SwingConstants.CENTER);
         lblVertex.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lblVertex.setForeground(new Color(51, 102, 204));
+        lblVertex.setForeground(Tema.acentoTexto());
         gbc.gridy = 2;
         gbc.insets = new Insets(0, 30, 8, 30);
         getContentPane().add(lblVertex, gbc);
@@ -79,7 +79,7 @@ public class VentanaDonacion extends JDialog {
         txtMensaje.setLineWrap(true);
         txtMensaje.setWrapStyleWord(true);
         txtMensaje.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        txtMensaje.setForeground(new Color(80, 80, 80));
+        txtMensaje.setForeground(Tema.textoSuave());
         // JTextArea no centra texto multi-línea por sí sola: forzamos con un panel centrado.
         javax.swing.JPanel panelTexto = new javax.swing.JPanel();
         panelTexto.setOpaque(false);
@@ -103,7 +103,7 @@ public class VentanaDonacion extends JDialog {
         JButton btnMasTarde = new JButton("Tal vez más tarde");
         btnMasTarde.setBorderPainted(false);
         btnMasTarde.setContentAreaFilled(false);
-        btnMasTarde.setForeground(new Color(130, 130, 130));
+        btnMasTarde.setForeground(Tema.textoSuave());
         btnMasTarde.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btnMasTarde.setFocusPainted(false);
         btnMasTarde.addActionListener(evt -> {

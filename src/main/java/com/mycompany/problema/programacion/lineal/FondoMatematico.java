@@ -22,7 +22,7 @@ import javax.swing.JPanel;
  */
 public class FondoMatematico extends JPanel {
 
-    private static final Color AZUL_BASE = new Color(68, 56, 208);
+    // el color base sale de Tema.fondoVentana() al pintar, para seguir el tema actual
     private static final Color LINEA_GRID = new Color(255, 255, 255, 25);
     private static final Color FORMULA = new Color(255, 255, 255, 30);
     private static final int PASO_GRID = 26;
@@ -44,7 +44,7 @@ public class FondoMatematico extends JPanel {
         int w = getWidth();
         int h = getHeight();
 
-        g2.setColor(AZUL_BASE);
+        g2.setColor(Tema.fondoVentana());
         g2.fillRect(0, 0, w, h);
 
         // cuadrícula

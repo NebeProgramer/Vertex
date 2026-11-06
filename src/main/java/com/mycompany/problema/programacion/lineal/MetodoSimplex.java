@@ -25,13 +25,8 @@ import com.mycompany.problema.programacion.lineal.parser.ParserLP;
  */
 public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
 
-    // ---- colores de resaltado (igual filosofía que AlgoritmoHungaro) ----
-    private static final Color COLOR_CAMBIO = new Color(200, 255, 200);   // verde: celda que cambió de valor
-    private static final Color COLOR_PIVOTE_LINEA = new Color(255, 255, 170); // amarillo: fila/columna pivote
-    private static final Color COLOR_PIVOTE_CELDA = new Color(255, 176, 120); // naranja: la celda pivote exacta
-
     // ---- estado del algoritmo ----
-    private final List<double[][]> tableaus = new ArrayList<>();
+    private final List<double[][]> tableros = new ArrayList<>();
     private final List<int[]> basisHistory = new ArrayList<>();
     private final List<String> pasoInfo = new ArrayList<>();
     private final List<Integer> pivotRowHistory = new ArrayList<>();
@@ -44,7 +39,6 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
     private double zOptimo;
     private double[] solucion;
     private String resultadoTexto;
-    private int[][] auxMatActual;
 
     /**
      * Creates new form MetodoSimblex
@@ -76,36 +70,12 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
         Recursos.instalarAyudaEnBarraTitulo(this, "Simplex",
                 "<html><b>Colorimetría — Simplex</b><br>&#128992; Naranja: celda pivote<br>&#128993; Amarillo: fila y columna del pivote<br>&#128994; Verde: números afectados por el cambio de variable</html>",
                 VentanaAyudaAlgoritmo.TEORIA_SIMPLEX);
+        Recursos.agregarBotonBarraTitulo(this, "Sensibilidad",
+                "Precios sombra, holguras y rangos de la solución óptima", this::mostrarSensibilidad);
         Recursos.envolverEnFondoAzul(this);
         Recursos.modernizarVentana(this);
-        instalarRendererColores(TablaTableau);
-    }
-
-    /**
-     * Pinta cada celda según auxMatActual: 1 = cambió respecto a la tabla
-     * anterior (verde), 2 = fila/columna pivote (amarillo), 3 = celda
-     * pivote exacta (naranja). Se recalcula en cada mostrarPaso(), así que
-     * nunca es acumulable entre pasos.
-     */
-    private void instalarRendererColores(JTable tabla) {
-        tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                setHorizontalAlignment(CENTER);
-                Color fondo = Color.WHITE;
-                if (auxMatActual != null && row < auxMatActual.length && column < auxMatActual[row].length) {
-                    switch (auxMatActual[row][column]) {
-                        case 3: fondo = COLOR_PIVOTE_CELDA; break;
-                        case 2: fondo = COLOR_PIVOTE_LINEA; break;
-                        case 1: fondo = COLOR_CAMBIO; break;
-                        default: fondo = Color.WHITE;
-                    }
-                }
-                c.setBackground(fondo);
-                return c;
-            }
-        });
+        // el texto del paso puede ser largo: que se recorte (completo en el tooltip) antes que empujar los botones
+        lblPaso.setMinimumSize(new java.awt.Dimension(40, 16));
     }
 
     /**
@@ -118,7 +88,7 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
     private void initComponents() {
 
         jScrollPane1 = new javax.swing.JScrollPane();
-        TablaTableau = new javax.swing.JTable();
+        TablaTablero = new javax.swing.JTable();
         btnAnterior = new javax.swing.JButton();
         lblPaso = new javax.swing.JLabel();
         btnSiguiente = new javax.swing.JButton();
@@ -131,10 +101,10 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
         setMinimumSize(new java.awt.Dimension(712, 460));
         setResizable(true);
 
-        TablaTableau.setFont(new java.awt.Font("Consolas", 0, 13)); // NOI18N
-        TablaTableau.setEnabled(false);
-        TablaTableau.setRowHeight(26);
-        jScrollPane1.setViewportView(TablaTableau);
+        TablaTablero.setFont(new java.awt.Font("Consolas", 0, 13)); // NOI18N
+        TablaTablero.setEnabled(false);
+        TablaTablero.setRowHeight(26);
+        jScrollPane1.setViewportView(TablaTablero);
 
         btnAnterior.setText("< Anterior");
         btnAnterior.addActionListener(new java.awt.event.ActionListener() {
@@ -145,7 +115,7 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
 
         lblPaso.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         lblPaso.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblPaso.setText("Tabla 1");
+        lblPaso.setText("Tablero 1");
 
         btnSiguiente.setText("Siguiente >");
         btnSiguiente.addActionListener(new java.awt.event.ActionListener() {
@@ -203,7 +173,7 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
     }//GEN-LAST:event_btnAnteriorActionPerformed
 
     private void btnSiguienteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSiguienteActionPerformed
-        if (pasoActual < tableaus.size() - 1) {
+        if (pasoActual < tableros.size() - 1) {
             pasoActual++;
             mostrarPaso(pasoActual);
         }
@@ -236,7 +206,7 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
      */
     public void calculos(String FO, String[] R, String tipo) {
         ParserLP.validarVariablesCompletas(FO, R);
-        tableaus.clear();
+        tableros.clear();
         basisHistory.clear();
         pasoInfo.clear();
         pivotRowHistory.clear();
@@ -304,7 +274,7 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
             varNames[k] = mapeo.nombreDe(ordered.get(k));
         }
         for (int i = 0; i < numSlack; i++) {
-            varNames[numVars + i] = "S" + (i + 1);
+            varNames[numVars + i] = "s" + (i + 1); // holgura de la restricción i (como en los apuntes)
         }
 
         // 3. Construir tabla inicial: [A | I | b] y fila Z = -c
@@ -330,7 +300,7 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
             basis[i] = numVars + i; // basis inicial = variables de holgura
         }
 
-        guardarPaso(T, basis, "Tabla inicial (base: holguras)", -1, -1);
+        guardarPaso(T, basis, "Tablero inicial (base: holguras)", -1, -1);
 
         // 4. Iterar
         int iterMax = 200;
@@ -399,6 +369,12 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
         double zRow = T[m][totalCols - 1];
         zOptimo = esMin ? -zRow : zRow;
 
+        // datos para el análisis de sensibilidad (base óptima en forma estándar)
+        sensC = c;
+        sensA = A;
+        sensB = b;
+        sensBase = basis.clone();
+
         StringBuilder sb = new StringBuilder();
         sb.append("Solución óptima: \n");
         for (int k = 0; k < numVars; k++) {
@@ -408,6 +384,28 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
         resultadoTexto = sb.toString();
 
         mostrarPaso(0);
+    }
+
+    // ---- análisis de sensibilidad ----
+    private double[] sensC;
+    private double[][] sensA;
+    private double[] sensB;
+    private int[] sensBase;
+
+    /** Abre las tablas de sensibilidad de la solución óptima (botón de la barra de título). */
+    private void mostrarSensibilidad() {
+        if (sensBase == null) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Todavía no hay una solución óptima que analizar.",
+                    "Sensibilidad", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        com.mycompany.problema.programacion.lineal.algoritmos.AnalisisSensibilidad s
+                = com.mycompany.problema.programacion.lineal.algoritmos.AnalisisSensibilidad.calcular(sensC, sensA, sensB, esMin, sensBase);
+        String[] restricciones = new String[sensB.length];
+        for (int i = 0; i < restricciones.length; i++) {
+            restricciones[i] = "R" + (i + 1);
+        }
+        new VentanaSensibilidad(this, "Simplex", s, java.util.Arrays.copyOf(varNames, numVars), restricciones).setVisible(true);
     }
 
     public double getZOptimo() {
@@ -423,91 +421,95 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
         for (int i = 0; i < T.length; i++) {
             clone[i] = T[i].clone();
         }
-        tableaus.add(clone);
+        tableros.add(clone);
         basisHistory.add(basis.clone());
         pasoInfo.add(info);
         pivotRowHistory.add(pivotRow);
         pivotColHistory.add(pivotCol);
     }
 
+    /**
+     * Muestra el tablero idx con el formato de los apuntes (Cj, Cb, Xb, Sol,
+     * θ, Zj y Pj = Cj − Zj). La decisión que se resalta es la de ESTE
+     * tablero: la columna que entra, la fila que sale (menor θ) y el pivote,
+     * que producen el tablero siguiente.
+     */
     private void mostrarPaso(int idx) {
-        if (tableaus.isEmpty()) {
+        if (tableros.isEmpty()) {
             return;
         }
-        double[][] T = tableaus.get(idx);
+        double[][] T = tableros.get(idx);
         int[] basis = basisHistory.get(idx);
         int m = T.length - 1;
-        int totalCols = T[0].length;
+        int cols = varNames.length;
+        int rhs = T[0].length - 1;
 
-        String[] columnas = new String[varNames.length + 2];
-        columnas[0] = "Base";
-        for (int j = 0; j < varNames.length; j++) {
-            columnas[j + 1] = varNames[j];
+        double[] cj = new double[cols];
+        for (int k = 0; k < numVars; k++) {
+            cj[k] = sensC[k];
         }
-        columnas[columnas.length - 1] = "RHS";
-
-        Object[][] datos = new Object[m + 1][columnas.length];
+        TableroVista.Datos d = new TableroVista.Datos();
+        d.variables = varNames.clone();
+        d.cj = new String[cols];
+        for (int j = 0; j < cols; j++) {
+            d.cj[j] = fmt(cj[j]);
+        }
+        d.cb = new String[m];
+        d.xb = new String[m];
+        d.cuerpo = new String[m][cols];
+        d.sol = new String[m];
+        double[] zj = new double[cols];
+        double z = 0;
         for (int i = 0; i < m; i++) {
-            datos[i][0] = varNames[basis[i]];
-            for (int j = 0; j < totalCols - 1; j++) {
-                datos[i][j + 1] = fmt(T[i][j]);
+            double cb = cj[basis[i]];
+            d.cb[i] = fmt(cb);
+            d.xb[i] = varNames[basis[i]];
+            for (int j = 0; j < cols; j++) {
+                d.cuerpo[i][j] = fmt(T[i][j]);
+                zj[j] += cb * T[i][j];
             }
-            datos[i][columnas.length - 1] = fmt(T[i][totalCols - 1]);
+            d.sol[i] = fmt(T[i][rhs]);
+            z += cb * T[i][rhs];
         }
-        datos[m][0] = "Z";
-        for (int j = 0; j < totalCols - 1; j++) {
-            datos[m][j + 1] = fmt(T[m][j]);
+        d.zj = new String[cols];
+        d.pj = new String[cols];
+        for (int j = 0; j < cols; j++) {
+            d.zj[j] = fmt(zj[j]);
+            d.pj[j] = fmt(cj[j] - zj[j]);
         }
-        datos[m][columnas.length - 1] = fmt(T[m][totalCols - 1]);
+        d.z = fmt(z);
 
-        // ---- construir matriz auxiliar de colores para esta tabla ----
-        int filasTabla = m + 1;
-        int colsTabla = columnas.length;
-        int[][] aux = new int[filasTabla][colsTabla];
-
+        // decisión de este tablero = pivote que produjo el tablero siguiente
+        String info;
+        if (idx < tableros.size() - 1) {
+            d.filaPivote = pivotRowHistory.get(idx + 1);
+            d.colPivote = pivotColHistory.get(idx + 1);
+            d.theta = new String[m];
+            for (int i = 0; i < m; i++) {
+                double a = T[i][d.colPivote];
+                d.theta[i] = a > 1e-9 ? fmt(T[i][rhs] / a) : "—";
+            }
+            info = "Entra " + varNames[d.colPivote] + ", sale " + varNames[basis[d.filaPivote]];
+        } else {
+            info = esMin ? "Óptimo: todos los Pj ≥ 0" : "Óptimo: todos los Pj ≤ 0";
+        }
         if (idx > 0) {
-            double[][] anterior = tableaus.get(idx - 1);
-            for (int i = 0; i < filasTabla; i++) {
-                for (int j = 1; j < colsTabla; j++) {
-                    double actual = T[i][j - 1];
-                    double previo = anterior[i][j - 1];
-                    if (Math.abs(actual - previo) > 1e-6) {
-                        aux[i][j] = 1; // cambió
-                    }
+            double[][] anterior = tableros.get(idx - 1);
+            d.cambio = new boolean[m][cols + 1];
+            for (int i = 0; i < m; i++) {
+                for (int j = 0; j <= cols; j++) {
+                    int c = j == cols ? rhs : j;
+                    d.cambio[i][j] = Math.abs(T[i][c] - anterior[i][c]) > 1e-6;
                 }
             }
         }
+        TableroVista.mostrar(TablaTablero, d);
 
-        int pRow = pivotRowHistory.get(idx);
-        int pCol = pivotColHistory.get(idx);
-        if (pRow >= 0 && pCol >= 0) {
-            for (int j = 0; j < colsTabla; j++) {
-                aux[pRow][j] = 2;
-            }
-            for (int i = 0; i < filasTabla; i++) {
-                if (aux[i][pCol + 1] != 3) {
-                    aux[i][pCol + 1] = 2;
-                }
-            }
-            aux[pRow][pCol + 1] = 3;
-        }
-        auxMatActual = aux;
-
-        DefaultTableModel model = new DefaultTableModel(datos, columnas) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-        TablaTableau.setModel(model);
-
-        String info = pasoInfo.get(idx);
-        lblPaso.setText("Tabla " + (idx + 1) + " de " + tableaus.size() + (info != null ? "  —  " + info : ""));
+        lblPaso.setText("Tablero " + (idx + 1) + " de " + tableros.size() + "  —  " + info);
+        lblPaso.setToolTipText(lblPaso.getText());
         btnAnterior.setEnabled(idx > 0);
-        btnSiguiente.setEnabled(idx < tableaus.size() - 1);
-
+        btnSiguiente.setEnabled(idx < tableros.size() - 1);
         txtResultado.setText(construirTextoPaso(idx));
-        TablaTableau.repaint();
     }
 
     /**
@@ -517,7 +519,7 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
      * (es decir, si esta es la última tabla).
      */
     private String construirTextoPaso(int idx) {
-        double[][] T = tableaus.get(idx);
+        double[][] T = tableros.get(idx);
         int[] basis = basisHistory.get(idx);
         int m = T.length - 1;
         int totalCols = T[0].length;
@@ -538,10 +540,10 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
                 break;
             }
         }
-        boolean esOptimo = idx == tableaus.size() - 1;
+        boolean esOptimo = idx == tableros.size() - 1;
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Tabla ").append(idx + 1).append(" de ").append(tableaus.size()).append(":\n");
+        sb.append("Tablero ").append(idx + 1).append(" de ").append(tableros.size()).append(":\n");
         for (int k = 0; k < numVars; k++) {
             sb.append(varNames[k]).append(" = ").append(fmt(sol[k])).append("\n");
         }
@@ -567,7 +569,7 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTable TablaTableau;
+    private javax.swing.JTable TablaTablero;
     private javax.swing.JButton btnAnterior;
     private javax.swing.JButton btnSiguiente;
     private javax.swing.JScrollPane jScrollPane1;

@@ -33,16 +33,18 @@ public final class Recursos {
         UIManager.put("Button.margin", new java.awt.Insets(8, 16, 8, 16));
         UIManager.put("ScrollBar.width", 10);
         UIManager.put("Table.rowHeight", 28);
-        UIManager.put("Panel.background", new java.awt.Color(246, 248, 251));
-        UIManager.put("TextField.background", java.awt.Color.WHITE);
-        UIManager.put("TextArea.background", java.awt.Color.WHITE);
-        UIManager.put("TextPane.background", java.awt.Color.WHITE);
+        UIManager.put("Panel.background", Tema.fondoPanel());
+        UIManager.put("TextField.background", Tema.campo());
+        UIManager.put("TextArea.background", Tema.campo());
+        UIManager.put("TextPane.background", Tema.campo());
+        UIManager.put("EditorPane.background", Tema.campo());
+        UIManager.put("Table.background", Tema.campo());
         UIManager.put("Button.background", new java.awt.Color(68, 56, 208));
         UIManager.put("Button.foreground", java.awt.Color.WHITE);
         UIManager.put("Button.hoverBackground", new java.awt.Color(85, 73, 224));
         UIManager.put("Button.pressedBackground", new java.awt.Color(52, 42, 170));
         UIManager.put("Component.focusColor", new java.awt.Color(68, 56, 208));
-        UIManager.put("Component.borderColor", new java.awt.Color(205, 213, 223));
+        UIManager.put("Component.borderColor", Tema.esOscuro() ? new java.awt.Color(80, 84, 94) : new java.awt.Color(205, 213, 223));
     }
 
     /** Ícono cuadrado para la barra de título / taskbar de cada ventana. */
@@ -152,7 +154,7 @@ public final class Recursos {
         // sin esto, el botón hereda el color por defecto de FlatLaf para
         // toolBarButton, que en la barra de título (blanca) queda
         // prácticamente invisible (texto claro sobre fondo blanco)
-        boton.setForeground(java.awt.Color.BLACK);
+        boton.setForeground(Tema.tinta());
         boton.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
         boton.addActionListener(evt
                 -> new VentanaAyudaAlgoritmo(ventana, tituloAlgoritmo, contenidoAyudaHtml, teoriaHtml).setVisible(true));
@@ -161,6 +163,28 @@ public final class Recursos {
         barra.add(javax.swing.Box.createHorizontalGlue());
         barra.add(boton);
         ventana.setJMenuBar(barra);
+    }
+
+    /**
+     * Agrega un botón de texto a la barra de título, a la izquierda del
+     * "(?)" (por ejemplo "Sensibilidad"). Llamar después de
+     * {@link #instalarAyudaEnBarraTitulo}.
+     */
+    public static javax.swing.JButton agregarBotonBarraTitulo(javax.swing.JFrame ventana, String texto,
+            String tooltip, Runnable accion) {
+        javax.swing.JButton boton = new javax.swing.JButton(texto);
+        boton.putClientProperty("JButton.buttonType", "toolBarButton");
+        boton.setFocusable(false);
+        boton.setToolTipText(tooltip);
+        boton.setForeground(Tema.acentoTexto());
+        boton.setFont(boton.getFont().deriveFont(java.awt.Font.BOLD));
+        boton.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+        boton.addActionListener(evt -> accion.run());
+        javax.swing.JMenuBar barra = ventana.getJMenuBar();
+        // justo antes del "(?)", que es el último componente de la barra
+        barra.add(boton, Math.max(0, barra.getComponentCount() - 1));
+        barra.revalidate();
+        return boton;
     }
 
     /**
@@ -175,7 +199,7 @@ public final class Recursos {
      */
     public static void envolverEnFondoAzul(javax.swing.JFrame ventana) {
         javax.swing.JPanel contenidoOriginal = (javax.swing.JPanel) ventana.getContentPane();
-        contenidoOriginal.setBackground(java.awt.Color.WHITE);
+        contenidoOriginal.setBackground(Tema.tarjeta());
         contenidoOriginal.setOpaque(true);
 
         FondoAzulPlano fondo = new FondoAzulPlano();
@@ -194,11 +218,6 @@ public final class Recursos {
         ventana.repaint();
     }
 
-    private static final java.awt.Color TINTA = new java.awt.Color(23, 45, 66);
-    private static final java.awt.Color ACENTO = new java.awt.Color(68, 56, 208);
-    private static final java.awt.Color BORDE_SUAVE = new java.awt.Color(220, 226, 234);
-    private static final java.awt.Color ENCABEZADO_TABLA = new java.awt.Color(245, 246, 250);
-
     /**
      * Recorre recursivamente el árbol de componentes de una ventana ya
      * armada y le aplica la misma paleta moderna que ya se usa en
@@ -212,9 +231,12 @@ public final class Recursos {
      */
     public static void modernizarVentana(java.awt.Container contenedor) {
         for (java.awt.Component c : contenedor.getComponents()) {
+            if (c instanceof javax.swing.JPanel && !(c instanceof FondoAzulPlano) && ((javax.swing.JPanel) c).isOpaque()) {
+                c.setBackground(Tema.tarjeta());
+            }
             if (c instanceof javax.swing.JLabel) {
                 javax.swing.JLabel l = (javax.swing.JLabel) c;
-                l.setForeground(TINTA);
+                l.setForeground(Tema.tinta());
             } else if (c instanceof javax.swing.JButton) {
                 javax.swing.JButton b = (javax.swing.JButton) c;
                 if (!"toolBarButton".equals(b.getClientProperty("JButton.buttonType"))) {
@@ -222,19 +244,24 @@ public final class Recursos {
                 }
             } else if (c instanceof javax.swing.JTable) {
                 javax.swing.JTable t = (javax.swing.JTable) c;
-                t.setSelectionBackground(ACENTO);
+                t.setSelectionBackground(Tema.acento());
                 t.setSelectionForeground(java.awt.Color.WHITE);
-                t.setGridColor(BORDE_SUAVE);
+                t.setGridColor(Tema.borde());
+                t.setBackground(Tema.campo());
+                t.setForeground(Tema.tinta());
                 if (t.getTableHeader() != null) {
-                    t.getTableHeader().setBackground(ENCABEZADO_TABLA);
-                    t.getTableHeader().setForeground(TINTA);
+                    t.getTableHeader().setBackground(Tema.encabezadoTabla());
+                    t.getTableHeader().setForeground(Tema.tinta());
                     t.getTableHeader().setFont(t.getTableHeader().getFont().deriveFont(java.awt.Font.BOLD));
                 }
             } else if (c instanceof javax.swing.JScrollPane) {
-                ((javax.swing.JScrollPane) c).setBorder(javax.swing.BorderFactory.createLineBorder(BORDE_SUAVE));
+                ((javax.swing.JScrollPane) c).setBorder(javax.swing.BorderFactory.createLineBorder(Tema.borde()));
+                ((javax.swing.JScrollPane) c).getViewport().setBackground(Tema.campo());
             } else if (c instanceof javax.swing.JTextArea) {
                 javax.swing.JTextArea ta = (javax.swing.JTextArea) c;
                 ta.setFont(new java.awt.Font("Consolas", java.awt.Font.PLAIN, 13));
+                ta.setBackground(Tema.campo());
+                ta.setForeground(Tema.tinta());
             }
             if (c instanceof java.awt.Container) {
                 modernizarVentana((java.awt.Container) c);

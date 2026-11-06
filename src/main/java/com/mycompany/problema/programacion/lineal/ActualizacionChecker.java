@@ -380,10 +380,10 @@ public class ActualizacionChecker {
 
         StringBuilder html = new StringBuilder();
         html.append("<html><head><style>")
-                .append("body{font-family:'").append(familiaFuente).append("';font-size:").append(tamanoFuente).append("pt;}")
+                .append("body{font-family:'").append(familiaFuente).append("';font-size:").append(tamanoFuente).append("pt;color:").append(Tema.hex(Tema.tinta())).append(";}")
                 .append("h1,h2,h3,h4,h5,h6{margin-top:10px;margin-bottom:4px;}")
-                .append("code{font-family:monospace;background-color:#e8e8e8;}")
-                .append("pre{font-family:monospace;background-color:#e8e8e8;padding:6px;}")
+                .append("code{font-family:monospace;background-color:").append(Tema.esOscuro() ? "#3a3c42" : "#e8e8e8").append(";}")
+                .append("pre{font-family:monospace;background-color:").append(Tema.esOscuro() ? "#3a3c42" : "#e8e8e8").append(";padding:6px;}")
                 .append("</style></head><body>");
 
         boolean enCodigo = false;

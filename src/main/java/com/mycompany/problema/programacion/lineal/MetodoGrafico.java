@@ -52,6 +52,7 @@ public class MetodoGrafico extends javax.swing.JFrame implements MetodoPL {
                 VentanaAyudaAlgoritmo.TEORIA_GRAFICO);
         Recursos.envolverEnFondoAzul(this);
         Recursos.modernizarVentana(this);
+        grafico.setBorder(javax.swing.BorderFactory.createLineBorder(Tema.borde())); // el de initComponents es negro fijo
     }
 
     /**

@@ -13,11 +13,11 @@ import javax.swing.JPanel;
  */
 public class FondoAzulPlano extends JPanel {
 
-    private static final Color AZUL = new Color(68, 56, 208);
+    // morado de Vertex (o su versión oscura): ver Tema.fondoVentana()
 
     public FondoAzulPlano() {
         setOpaque(true);
-        setBackground(AZUL);
+        setBackground(Tema.fondoVentana());
     }
 
     @Override

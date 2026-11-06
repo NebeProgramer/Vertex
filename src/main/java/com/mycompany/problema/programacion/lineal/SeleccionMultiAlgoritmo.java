@@ -19,7 +19,7 @@ import javax.swing.JPopupMenu;
 public class SeleccionMultiAlgoritmo {
 
     public static final String[] NOMBRES = {
-        "Grafico", "Numerico", "Simplex", "Big M", "Simplex Dual", "Costos Dual", "Hungaro"
+        "Grafico", "Numerico", "Simplex", "Simplex Revisado", "Big M", "Simplex Dual", "Costos Dual", "Hungaro"
     };
 
     /**
@@ -53,20 +53,20 @@ public class SeleccionMultiAlgoritmo {
         });
 
         panel.setLayout(new java.awt.BorderLayout());
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(Tema.tarjeta());
         selector.setText("Decide por mi");
         selector.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         selector.setFocusPainted(false);
-        selector.setBackground(Color.WHITE);
-        selector.setForeground(new Color(23, 45, 66));
+        selector.setBackground(Tema.tarjeta());
+        selector.setForeground(Tema.tinta());
         selector.setToolTipText("Selecciona uno o varios algoritmos");
         selector.addActionListener(e -> abrirPopup());
         panel.add(selector, java.awt.BorderLayout.CENTER);
 
         JPanel opciones = new JPanel(new GridLayout(0, 1, 0, 2));
-        opciones.setBackground(Color.WHITE);
+        opciones.setBackground(Tema.tarjeta());
         opciones.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
-        decidirAutomaticamente.setBackground(Color.WHITE);
+        decidirAutomaticamente.setBackground(Tema.tarjeta());
         decidirAutomaticamente.setSelected(true);
         decidirAutomaticamente.addActionListener(e -> {
             if (decidirAutomaticamente.isSelected()) {
@@ -78,12 +78,12 @@ public class SeleccionMultiAlgoritmo {
         opciones.add(decidirAutomaticamente);
         for (String nombre : NOMBRES) {
             JCheckBox cb = new JCheckBox(nombre);
-            cb.setBackground(Color.WHITE);
+            cb.setBackground(Tema.tarjeta());
             cb.addActionListener(e -> onToggleCheckbox(nombre, cb.isSelected()));
             checks.put(nombre, cb);
             opciones.add(cb);
         }
-        popup.setBorder(BorderFactory.createLineBorder(new Color(185, 195, 210)));
+        popup.setBorder(BorderFactory.createLineBorder(Tema.borde()));
         popup.add(opciones);
     }
 

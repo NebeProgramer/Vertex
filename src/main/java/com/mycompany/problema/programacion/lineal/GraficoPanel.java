@@ -38,7 +38,7 @@ public class GraficoPanel extends JPanel {
     private boolean esFactible = true;
 
     public GraficoPanel() {
-        setBackground(Color.WHITE);
+        setBackground(Tema.tarjeta());
         // habilita el cuadro flotante (tooltip) al pasar el mouse sobre un punto factible
         ToolTipManager.sharedInstance().registerComponent(this);
         setToolTipText("");
@@ -121,7 +121,7 @@ public class GraficoPanel extends JPanel {
         int margen = 45;
 
         if (!hayResultado) {
-            g2.setColor(Color.GRAY);
+            g2.setColor(Tema.textoSuave());
             g2.drawString("Aún no hay datos para graficar.", margen, h / 2);
             return;
         }
@@ -150,7 +150,7 @@ public class GraficoPanel extends JPanel {
         int plotH = h - 2 * margen;
 
         // ---- ejes ----
-        g2.setColor(Color.DARK_GRAY);
+        g2.setColor(Tema.tinta());
         g2.setStroke(new BasicStroke(1.5f));
         g2.drawLine(margen, h - margen, w - margen, h - margen); // eje x1
         g2.drawLine(margen, margen, margen, h - margen);         // eje x2
@@ -237,7 +237,7 @@ public class GraficoPanel extends JPanel {
             int py = h - margen - (int) (optimo[1] / maxY * plotH);
             g2.setColor(new Color(40, 150, 70));
             g2.fillOval(px - 6, py - 6, 12, 12);
-            g2.setColor(Color.BLACK);
+            g2.setColor(Tema.tinta());
             g2.drawOval(px - 6, py - 6, 12, 12);
             g2.drawString("(" + FormatoNumero.fmt(optimo[0]) + ", " + FormatoNumero.fmt(optimo[1]) + ")  Z="
                     + FormatoNumero.fmt(zOptimo), px + 8, py - 8);

@@ -88,7 +88,7 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 setHorizontalAlignment(CENTER);
-                Color fondo = Color.WHITE;
+                Color fondo = Tema.campo();
                 if (filaEstado != null && row < filaEstado.length) {
                     switch (filaEstado[row]) {
                         case 2: fondo = COLOR_OPTIMO; break;
@@ -97,6 +97,8 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
                     }
                 }
                 c.setBackground(fondo);
+                // los resaltados de la colorimetría son pastel: encima, texto oscuro también en modo oscuro
+                c.setForeground(fondo.equals(Tema.campo()) ? Tema.tinta() : Tema.textoSobreResaltado());
                 return c;
             }
         });
@@ -239,32 +241,20 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
         for (int k = 0; k < numVars; k++) {
             varNames[k] = mapeo.nombreDe(ordered.get(k));
         }
-        double[][] Amp = new double[m][n]; // matriz ampliada [decisión | holguras | excesos]
-        int colLibre = numVars;
-        int sCount = 0, eCount = 0;
+        double[][] Amp = new double[m][n]; // matriz ampliada [decisión | s1 ... sm]
         for (int i = 0; i < m; i++) {
             for (int k = 0; k < numVars; k++) {
                 Amp[i][k] = A[i][k];
             }
         }
-        // Asignar columnas en orden estable: primero holguras, luego excesos,
-        // recorriendo las restricciones en su orden original.
-        sCount = 0;
+        // Como en los apuntes: cada restricción <= suma su holgura s_i y cada
+        // >= resta su exceso s_i (i = número de la restricción); las = no llevan s.
+        int colLibre = numVars;
         for (int i = 0; i < m; i++) {
-            if (ops[i].equals("<=")) {
-                int col = numVars + sCount;
-                varNames[col] = "S" + (sCount + 1);
-                Amp[i][col] = 1.0;
-                sCount++;
-            }
-        }
-        eCount = 0;
-        for (int i = 0; i < m; i++) {
-            if (ops[i].equals(">=")) {
-                int col = numVars + holguras + eCount;
-                varNames[col] = "E" + (eCount + 1);
-                Amp[i][col] = -1.0;
-                eCount++;
+            if (ops[i].equals("<=") || ops[i].equals(">=")) {
+                int col = colLibre++;
+                varNames[col] = "s" + (i + 1);
+                Amp[i][col] = ops[i].equals("<=") ? 1.0 : -1.0;
             }
         }
 
@@ -275,7 +265,9 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
         int filaOptimaZ = -1;
         double mejorZ = esMin ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 
-        Object[][] datos = new Object[combinaciones.size()][n + 3];
+        // con 2 variables se agrega la columna Punto (x1, x2), el vértice del método gráfico
+        boolean conPunto = numVars == 2;
+        Object[][] datos = new Object[combinaciones.size()][n + (conPunto ? 4 : 3)];
         filaEstado = new int[combinaciones.size()];
         for (int fila = 0; fila < combinaciones.size(); fila++) {
             int[] basicas = combinaciones.get(fila);
@@ -324,6 +316,9 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
             }
             datos[fila][n + 1] = singular ? "Singular" : (factible ? "Sí" : "No");
             datos[fila][n + 2] = factible ? fmt(z) : "—";
+            if (conPunto) {
+                datos[fila][n + 3] = singular ? "—" : "(" + fmt(solucion[0]) + ", " + fmt(solucion[1]) + ")";
+            }
             filaEstado[fila] = factible ? 1 : 0;
 
             if (factible) {
@@ -340,13 +335,16 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
             filaEstado[filaOptima] = 2;
         }
 
-        String[] columnas = new String[n + 3];
-        columnas[0] = "#";
+        String[] columnas = new String[datos.length > 0 ? datos[0].length : n + 3];
+        columnas[0] = "Nº";
         for (int k = 0; k < n; k++) {
             columnas[k + 1] = varNames[k];
         }
-        columnas[n + 1] = "Factible";
+        columnas[n + 1] = "¿Fact.?";
         columnas[n + 2] = "Z";
+        if (conPunto) {
+            columnas[n + 3] = "Punto";
+        }
 
         DefaultTableModel model = new DefaultTableModel(datos, columnas) {
             @Override

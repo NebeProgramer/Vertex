@@ -4,18 +4,12 @@
  */
 package com.mycompany.problema.programacion.lineal;
 
-import java.awt.Color;
-import java.awt.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.swing.JLabel;
-import javax.swing.JTable;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import com.mycompany.problema.programacion.lineal.algoritmos.MetodoPL;
 import com.mycompany.problema.programacion.lineal.parser.ParserLP;
 
@@ -38,12 +32,9 @@ import com.mycompany.problema.programacion.lineal.parser.ParserLP;
  */
 public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
 
-    private static final Color COLOR_CAMBIO = new Color(200, 255, 200);
-    private static final Color COLOR_PIVOTE_LINEA = new Color(255, 255, 170);
-    private static final Color COLOR_PIVOTE_CELDA = new Color(255, 176, 120);
     private static final double EPS = 1e-9;
 
-    private final List<double[][]> tableaus = new ArrayList<>();
+    private final List<double[][]> tableros = new ArrayList<>();
     private final List<int[]> basisHistory = new ArrayList<>();
     private final List<String> pasoInfo = new ArrayList<>();
     private final List<Integer> pivotRowHistory = new ArrayList<>();
@@ -58,7 +49,8 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
     private double zOptimo;
     private double[] solucion;
     private String resultadoTexto;
-    private int[][] auxMatActual;
+    /** Coeficientes de Z tal como los escribió el usuario (fila Cj del tablero). */
+    private double[] cUsuario;
 
     
     /** Nombres a mostrar (xij originales); identidad = "x" + k, como siempre. */
@@ -89,28 +81,8 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
                 VentanaAyudaAlgoritmo.TEORIA_DUAL);
         Recursos.envolverEnFondoAzul(this);
         Recursos.modernizarVentana(this);
-        instalarRendererColores(TablaTableau);
-    }
-
-    private void instalarRendererColores(JTable tabla) {
-        tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                setHorizontalAlignment(CENTER);
-                Color fondo = Color.WHITE;
-                if (auxMatActual != null && row < auxMatActual.length && column < auxMatActual[row].length) {
-                    switch (auxMatActual[row][column]) {
-                        case 3: fondo = COLOR_PIVOTE_CELDA; break;
-                        case 2: fondo = COLOR_PIVOTE_LINEA; break;
-                        case 1: fondo = COLOR_CAMBIO; break;
-                        default: fondo = Color.WHITE;
-                    }
-                }
-                c.setBackground(fondo);
-                return c;
-            }
-        });
+        // el texto del paso puede ser largo: que se recorte (completo en el tooltip) antes que empujar los botones
+        lblPaso.setMinimumSize(new java.awt.Dimension(40, 16));
     }
 
     @SuppressWarnings("unchecked")
@@ -118,7 +90,7 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
     private void initComponents() {
 
         jScrollPane1 = new javax.swing.JScrollPane();
-        TablaTableau = new javax.swing.JTable();
+        TablaTablero = new javax.swing.JTable();
         btnAnterior = new javax.swing.JButton();
         lblPaso = new javax.swing.JLabel();
         btnSiguiente = new javax.swing.JButton();
@@ -132,10 +104,10 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
         setMinimumSize(new java.awt.Dimension(712, 460));
         setResizable(true);
 
-        TablaTableau.setFont(new java.awt.Font("Consolas", 0, 13)); // NOI18N
-        TablaTableau.setEnabled(false);
-        TablaTableau.setRowHeight(26);
-        jScrollPane1.setViewportView(TablaTableau);
+        TablaTablero.setFont(new java.awt.Font("Consolas", 0, 13)); // NOI18N
+        TablaTablero.setEnabled(false);
+        TablaTablero.setRowHeight(26);
+        jScrollPane1.setViewportView(TablaTablero);
 
         btnAnterior.setText("< Anterior");
         btnAnterior.addActionListener(new java.awt.event.ActionListener() {
@@ -147,7 +119,7 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
         lblPaso.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         lblPaso.setForeground(new java.awt.Color(40, 60, 110));
         lblPaso.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblPaso.setText("Tabla 1");
+        lblPaso.setText("Tablero 1");
 
         btnSiguiente.setText("Siguiente >");
         btnSiguiente.addActionListener(new java.awt.event.ActionListener() {
@@ -205,7 +177,7 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
     }//GEN-LAST:event_btnAnteriorActionPerformed
 
     private void btnSiguienteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSiguienteActionPerformed
-        if (pasoActual < tableaus.size() - 1) {
+        if (pasoActual < tableros.size() - 1) {
             pasoActual++;
             mostrarPaso(pasoActual);
         }
@@ -231,7 +203,7 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
      */
     public void calculos(String FO, String[] R, String tipo) {
         ParserLP.validarVariablesCompletas(FO, R);
-        tableaus.clear();
+        tableros.clear();
         basisHistory.clear();
         pasoInfo.clear();
         pivotRowHistory.clear();
@@ -295,7 +267,7 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
             varNames[k] = mapeo.nombreDe(ordered.get(k));
         }
         for (int i = 0; i < numSlack; i++) {
-            varNames[numVars + i] = "S" + (i + 1);
+            varNames[numVars + i] = "s" + (i + 1);
         }
 
         int totalCols = numVars + numSlack + 1;
@@ -332,7 +304,8 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
             }
         }
 
-        guardarPaso(T, basis, "Tabla inicial (dual-factible, RHS puede ser negativo)", -1, -1);
+        cUsuario = c;
+        guardarPaso(T, basis, "Tablero inicial (dual-factible, RHS puede ser negativo)", -1, -1);
 
         int iterMax = 200;
         int iter = 0;
@@ -431,99 +404,115 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
         for (int i = 0; i < T.length; i++) {
             clone[i] = T[i].clone();
         }
-        tableaus.add(clone);
+        tableros.add(clone);
         basisHistory.add(basis.clone());
         pasoInfo.add(info);
         pivotRowHistory.add(pivotRow);
         pivotColHistory.add(pivotCol);
     }
 
+    /**
+     * Dibuja el tablero idx con el formato de los apuntes (Cj, Cb, Xb, Sol,
+     * Zj, Pj = Cj − Zj). En el Dual primero se elige la fila (la de Sol más
+     * negativa) y luego la columna, con la razón |Pj / a_rj| de las
+     * columnas con a_rj &lt; 0: esa razón va en una fila extra bajo Pj.
+     */
     private void mostrarPaso(int idx) {
-        if (tableaus.isEmpty()) {
+        if (tableros.isEmpty()) {
             return;
         }
-        double[][] T = tableaus.get(idx);
+        double[][] T = tableros.get(idx);
         int[] basis = basisHistory.get(idx);
         int m = T.length - 1;
-        int totalCols = T[0].length;
+        int cols = varNames.length;
+        int rhs = T[0].length - 1;
 
-        String[] columnas = new String[varNames.length + 2];
-        columnas[0] = "Base";
-        for (int j = 0; j < varNames.length; j++) {
-            columnas[j + 1] = varNames[j];
+        double[] cj = new double[cols];
+        for (int k = 0; k < numVars; k++) {
+            cj[k] = cUsuario[k];
         }
-        columnas[columnas.length - 1] = "RHS";
 
-        Object[][] datos = new Object[m + 1][columnas.length];
+        TableroVista.Datos d = new TableroVista.Datos();
+        d.variables = varNames.clone();
+        d.conTheta = false;
+        d.cj = new String[cols];
+        for (int j = 0; j < cols; j++) {
+            d.cj[j] = fmt(cj[j]);
+        }
+        d.cb = new String[m];
+        d.xb = new String[m];
+        d.cuerpo = new String[m][cols];
+        d.sol = new String[m];
+        double[] zj = new double[cols];
+        double z = 0;
         for (int i = 0; i < m; i++) {
-            datos[i][0] = varNames[basis[i]];
-            for (int j = 0; j < totalCols - 1; j++) {
-                datos[i][j + 1] = fmt(T[i][j]);
+            double cb = cj[basis[i]];
+            d.cb[i] = fmt(cb);
+            d.xb[i] = varNames[basis[i]];
+            for (int j = 0; j < cols; j++) {
+                d.cuerpo[i][j] = fmt(T[i][j]);
+                zj[j] += cb * T[i][j];
             }
-            datos[i][columnas.length - 1] = fmt(T[i][totalCols - 1]);
+            d.sol[i] = fmt(T[i][rhs]);
+            z += cb * T[i][rhs];
         }
-        datos[m][0] = "Z";
-        for (int j = 0; j < totalCols - 1; j++) {
-            datos[m][j + 1] = fmt(T[m][j]);
+        double[] pj = new double[cols];
+        d.zj = new String[cols];
+        d.pj = new String[cols];
+        for (int j = 0; j < cols; j++) {
+            pj[j] = cj[j] - zj[j];
+            d.zj[j] = fmt(zj[j]);
+            d.pj[j] = fmt(pj[j]);
         }
-        datos[m][columnas.length - 1] = fmt(T[m][totalCols - 1]);
+        d.z = fmt(z);
 
-        int filasTabla = m + 1;
-        int colsTabla = columnas.length;
-        int[][] aux = new int[filasTabla][colsTabla];
+        String info;
+        if (idx < tableros.size() - 1) {
+            int fila = pivotRowHistory.get(idx + 1);
+            int col = pivotColHistory.get(idx + 1);
+            d.filaPivote = fila;
+            d.colPivote = col;
+            d.etiquetaExtra = "|Pj/a|";
+            d.filaExtra = new String[cols];
+            for (int j = 0; j < cols; j++) {
+                double a = T[fila][j];
+                d.filaExtra[j] = a < -EPS ? fmt(Math.abs(pj[j] / a)) : "—";
+            }
+            info = "Sale " + varNames[basis[fila]] + ", entra " + varNames[col];
+        } else if (!factible) {
+            info = "Sin solución factible: la fila con Sol < 0 no tiene ningún a < 0";
+        } else {
+            info = "Óptimo: todas las Sol ≥ 0";
+        }
 
         if (idx > 0) {
-            double[][] anterior = tableaus.get(idx - 1);
-            for (int i = 0; i < filasTabla; i++) {
-                for (int j = 1; j < colsTabla; j++) {
-                    if (Math.abs(T[i][j - 1] - anterior[i][j - 1]) > 1e-6) {
-                        aux[i][j] = 1;
-                    }
+            double[][] anterior = tableros.get(idx - 1);
+            d.cambio = new boolean[m][cols + 1];
+            for (int i = 0; i < m; i++) {
+                for (int j = 0; j <= cols; j++) {
+                    d.cambio[i][j] = Math.abs(T[i][j] - anterior[i][j]) > 1e-6;
                 }
             }
         }
 
-        int pRow = pivotRowHistory.get(idx);
-        int pCol = pivotColHistory.get(idx);
-        if (pRow >= 0 && pCol >= 0) {
-            for (int j = 0; j < colsTabla; j++) {
-                aux[pRow][j] = 2;
-            }
-            for (int i = 0; i < filasTabla; i++) {
-                if (aux[i][pCol + 1] != 3) {
-                    aux[i][pCol + 1] = 2;
-                }
-            }
-            aux[pRow][pCol + 1] = 3;
-        }
-        auxMatActual = aux;
-
-        DefaultTableModel model = new DefaultTableModel(datos, columnas) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-        TablaTableau.setModel(model);
-
-        String info = pasoInfo.get(idx);
-        lblPaso.setText("Tabla " + (idx + 1) + " de " + tableaus.size() + (info != null ? "  —  " + info : ""));
+        TableroVista.mostrar(TablaTablero, d);
+        lblPaso.setText("Tablero " + (idx + 1) + " de " + tableros.size() + "  —  " + info);
+        lblPaso.setToolTipText(lblPaso.getText());
         btnAnterior.setEnabled(idx > 0);
-        btnSiguiente.setEnabled(idx < tableaus.size() - 1);
+        btnSiguiente.setEnabled(idx < tableros.size() - 1);
 
         txtResultado.setText(construirTextoPaso(idx));
-        TablaTableau.repaint();
     }
 
     /**
-     * Arma el texto de resultado propio de la tabla que se está mostrando:
+     * Arma el texto de resultado propio del tablero que se está mostrando:
      * solución básica de ese paso, si es factible en ese punto (todos los
      * RHS &gt;= 0 — en Simplex Dual esto NO se cumple hasta el final) y si
-     * ya es la solución óptima (la última tabla, y solo si el problema
+     * ya es la solución óptima (el último tablero, y solo si el problema
      * resultó factible).
      */
     private String construirTextoPaso(int idx) {
-        double[][] T = tableaus.get(idx);
+        double[][] T = tableros.get(idx);
         int[] basis = basisHistory.get(idx);
         int m = T.length - 1;
         int totalCols = T[0].length;
@@ -544,11 +533,11 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
                 break;
             }
         }
-        boolean esUltimaTabla = idx == tableaus.size() - 1;
+        boolean esUltimaTabla = idx == tableros.size() - 1;
         boolean esOptimo = esUltimaTabla && factible;
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Tabla ").append(idx + 1).append(" de ").append(tableaus.size()).append(":\n");
+        sb.append("Tablero ").append(idx + 1).append(" de ").append(tableros.size()).append(":\n");
         for (int k = 0; k < numVars; k++) {
             sb.append(varNames[k]).append(" = ").append(fmt(sol[k])).append("\n");
         }
@@ -578,7 +567,7 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTable TablaTableau;
+    private javax.swing.JTable TablaTablero;
     private javax.swing.JButton btnAnterior;
     private javax.swing.JButton btnSiguiente;
     private javax.swing.JScrollPane jScrollPane1;

@@ -170,7 +170,7 @@ public class MenuHistorial {
     // ---------------------------------------------------------------
     private BotonFade crearBoton() {
         BotonFade b = new BotonFade();
-        b.setBackground(Color.WHITE);
+        b.setBackground(Tema.tarjeta());
         b.setFocusable(false);
         b.setToolTipText("Historial de cálculos");
         return b;
@@ -307,14 +307,14 @@ public class MenuHistorial {
 
     private JPanel crearPanel() {
         JPanel p = new JPanel(new BorderLayout());
-        p.setBackground(Color.WHITE);
+        p.setBackground(Tema.tarjeta());
         p.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createLineBorder(Tema.borde()),
                 BorderFactory.createEmptyBorder(6, 6, 6, 6)));
 
         JLabel titulo = new JLabel("Historial");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        titulo.setForeground(new Color(40, 60, 110));
+        titulo.setForeground(Tema.tinta());
         titulo.setBorder(BorderFactory.createEmptyBorder(2, 4, 6, 4));
         p.add(titulo, BorderLayout.NORTH);
 
@@ -557,7 +557,7 @@ public class MenuHistorial {
     // ---------------------------------------------------------------
     private static class BotonFade extends JButton {
 
-        private static final Color COLOR_BARRAS = new Color(68, 56, 208); // mismo acento del resto del rediseño
+        // barras del ícono: Tema.acentoTexto(), que también se ve sobre la tarjeta oscura
 
         private float alpha = 1f;
 
@@ -585,7 +585,7 @@ public class MenuHistorial {
             super.paintComponent(g);
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(COLOR_BARRAS);
+            g2.setColor(Tema.acentoTexto());
 
             int anchoBarra = (int) (getWidth() * 0.5);
             int altoBarra = Math.max(2, getHeight() / 12);

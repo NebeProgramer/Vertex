@@ -40,9 +40,9 @@ public class MultiCalculos extends JFrame {
         this.metodos = metodosResueltos;
         this.nombres = nombresAlgoritmos;
 
-        java.awt.Color tinta = new java.awt.Color(23, 45, 66);
-        java.awt.Color acento = new java.awt.Color(68, 56, 208);
-        java.awt.Color bordeSuave = new java.awt.Color(220, 226, 234);
+        java.awt.Color tinta = Tema.tinta();
+        java.awt.Color acento = Tema.acento();
+        java.awt.Color bordeSuave = Tema.borde();
 
         setTitle("Vertex — Resultados (Multi-algoritmo)");
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -67,7 +67,7 @@ public class MultiCalculos extends JFrame {
         btnSiguiente.addActionListener(e -> mostrarIndice((indice + 1) % metodos.size()));
 
         JPanel top = new JPanel(new BorderLayout());
-        top.setBackground(java.awt.Color.WHITE);
+        top.setBackground(Tema.tarjeta());
         top.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 0, 1, 0, bordeSuave),
                 BorderFactory.createEmptyBorder(10, 14, 10, 14)));
@@ -78,7 +78,7 @@ public class MultiCalculos extends JFrame {
         btnAnterior.setEnabled(metodos.size() > 1);
         btnSiguiente.setEnabled(metodos.size() > 1);
 
-        getContentPane().setBackground(acento);
+        getContentPane().setBackground(Tema.fondoVentana());
         add(top, BorderLayout.NORTH);
         add(panelCards, BorderLayout.CENTER);
 

@@ -4,18 +4,12 @@
  */
 package com.mycompany.problema.programacion.lineal;
 
-import java.awt.Color;
-import java.awt.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.swing.JLabel;
-import javax.swing.JTable;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import com.mycompany.problema.programacion.lineal.algoritmos.MetodoPL;
 import com.mycompany.problema.programacion.lineal.parser.ParserLP;
 
@@ -31,13 +25,10 @@ import com.mycompany.problema.programacion.lineal.parser.ParserLP;
  */
 public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
 
-    private static final Color COLOR_CAMBIO = new Color(200, 255, 200);
-    private static final Color COLOR_PIVOTE_LINEA = new Color(255, 255, 170);
-    private static final Color COLOR_PIVOTE_CELDA = new Color(255, 176, 120);
     private static final double EPS = 1e-9;
 
     // ---- estado del algoritmo ----
-    private final List<double[][]> tableaus = new ArrayList<>();      // filas de restricciones (planas)
+    private final List<double[][]> tableros = new ArrayList<>();      // filas de restricciones (planas)
     private final List<double[]> zConst = new ArrayList<>();          // parte constante de la fila Z por paso
     private final List<double[]> zM = new ArrayList<>();              // coeficiente de M de la fila Z por paso
     private final List<int[]> basisHistory = new ArrayList<>();
@@ -54,7 +45,8 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
     private double zOptimo;
     private double[] solucion;
     private String resultadoTexto;
-    private int[][] auxMatActual;
+    /** Coeficientes de Z tal como los escribió el usuario (fila Cj del tablero). */
+    private double[] cUsuario;
 
     
     /** Nombres a mostrar (xij originales); identidad = "x" + k, como siempre. */
@@ -85,28 +77,8 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
                 VentanaAyudaAlgoritmo.TEORIA_BIGM);
         Recursos.envolverEnFondoAzul(this);
         Recursos.modernizarVentana(this);
-        instalarRendererColores(TablaTableau);
-    }
-
-    private void instalarRendererColores(JTable tabla) {
-        tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                setHorizontalAlignment(CENTER);
-                Color fondo = Color.WHITE;
-                if (auxMatActual != null && row < auxMatActual.length && column < auxMatActual[row].length) {
-                    switch (auxMatActual[row][column]) {
-                        case 3: fondo = COLOR_PIVOTE_CELDA; break;
-                        case 2: fondo = COLOR_PIVOTE_LINEA; break;
-                        case 1: fondo = COLOR_CAMBIO; break;
-                        default: fondo = Color.WHITE;
-                    }
-                }
-                c.setBackground(fondo);
-                return c;
-            }
-        });
+        // el texto del paso puede ser largo: que se recorte (completo en el tooltip) antes que empujar los botones
+        lblPaso.setMinimumSize(new java.awt.Dimension(40, 16));
     }
 
     @SuppressWarnings("unchecked")
@@ -114,7 +86,7 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
     private void initComponents() {
 
         jScrollPane1 = new javax.swing.JScrollPane();
-        TablaTableau = new javax.swing.JTable();
+        TablaTablero = new javax.swing.JTable();
         btnAnterior = new javax.swing.JButton();
         lblPaso = new javax.swing.JLabel();
         btnSiguiente = new javax.swing.JButton();
@@ -128,10 +100,10 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
         setMinimumSize(new java.awt.Dimension(712, 460));
         setResizable(true);
 
-        TablaTableau.setEnabled(false);
-        TablaTableau.setFont(new java.awt.Font("Consolas", 0, 13)); // NOI18N
-        TablaTableau.setRowHeight(26);
-        jScrollPane1.setViewportView(TablaTableau);
+        TablaTablero.setEnabled(false);
+        TablaTablero.setFont(new java.awt.Font("Consolas", 0, 13)); // NOI18N
+        TablaTablero.setRowHeight(26);
+        jScrollPane1.setViewportView(TablaTablero);
 
         btnAnterior.setText("< Anterior");
         btnAnterior.addActionListener(new java.awt.event.ActionListener() {
@@ -143,7 +115,7 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
         lblPaso.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         lblPaso.setForeground(new java.awt.Color(40, 60, 110));
         lblPaso.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblPaso.setText("Tabla 1");
+        lblPaso.setText("Tablero 1");
 
         btnSiguiente.setText("Siguiente >");
         btnSiguiente.addActionListener(new java.awt.event.ActionListener() {
@@ -201,7 +173,7 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
     }//GEN-LAST:event_btnAnteriorActionPerformed
 
     private void btnSiguienteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSiguienteActionPerformed
-        if (pasoActual < tableaus.size() - 1) {
+        if (pasoActual < tableros.size() - 1) {
             pasoActual++;
             mostrarPaso(pasoActual);
         }
@@ -227,7 +199,7 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
      */
     public void calculos(String FO, String[] R, String tipo) {
         ParserLP.validarVariablesCompletas(FO, R);
-        tableaus.clear();
+        tableros.clear();
         zConst.clear();
         zM.clear();
         basisHistory.clear();
@@ -313,8 +285,9 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
         double[][] T = new double[m][totalCols];
         int[] basis = new int[m];
 
+        // Como en los apuntes: holgura (+s) o exceso (−s) y artificial A
+        // llevan el número de su restricción.
         int colLibre = numVars;
-        int sCount = 0, eCount = 0, aCount = 0;
         for (int i = 0; i < m; i++) {
             for (int k = 0; k < numVars; k++) {
                 T[i][k] = A[i][k];
@@ -323,29 +296,25 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
 
             switch (ops[i]) {
                 case "<=" -> {
-                    sCount++;
                     int col = colLibre++;
-                    varNames[col] = "S" + sCount;
+                    varNames[col] = "s" + (i + 1);
                     T[i][col] = 1.0;
                     basis[i] = col;
                 }
                 case ">=" -> {
-                    eCount++;
                     int colE = colLibre++;
-                    varNames[colE] = "E" + eCount;
+                    varNames[colE] = "s" + (i + 1);
                     T[i][colE] = -1.0;
 
-                    aCount++;
                     int colA = colLibre++;
-                    varNames[colA] = "A" + aCount;
+                    varNames[colA] = "A" + (i + 1);
                     esArtificial[colA] = true;
                     T[i][colA] = 1.0;
                     basis[i] = colA;
                 }
                 case "=" -> {
-                    aCount++;
                     int colA = colLibre++;
-                    varNames[colA] = "A" + aCount;
+                    varNames[colA] = "A" + (i + 1);
                     esArtificial[colA] = true;
                     T[i][colA] = 1.0;
                     basis[i] = colA;
@@ -377,7 +346,8 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
             }
         }
 
-        guardarPaso(T, zc, zm, basis, "Tabla inicial (base: holguras/artificiales)", -1, -1);
+        cUsuario = c;
+        guardarPaso(T, zc, zm, basis, "Tablero inicial (base: holguras/artificiales)", -1, -1);
 
         // ---- 4) iterar ----
         int iterMax = 300;
@@ -509,7 +479,7 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
         for (int i = 0; i < T.length; i++) {
             clone[i] = T[i].clone();
         }
-        tableaus.add(clone);
+        tableros.add(clone);
         zConst.add(zc.clone());
         zM.add(zm.clone());
         basisHistory.add(basis.clone());
@@ -518,102 +488,114 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
         pivotColHistory.add(pivotCol);
     }
 
+    /**
+     * Dibuja el tablero idx con el formato de los apuntes: fila Cj (las
+     * artificiales llevan +M en Min y −M en Max), columnas Cb / Xb / Sol / θ
+     * y filas Zj = Σ Cb·aij y Pj = Cj − Zj, todas como "a + bM".
+     */
     private void mostrarPaso(int idx) {
-        if (tableaus.isEmpty()) {
+        if (tableros.isEmpty()) {
             return;
         }
-        double[][] T = tableaus.get(idx);
-        double[] zc = zConst.get(idx);
-        double[] zm = zM.get(idx);
+        double[][] T = tableros.get(idx);
         int[] basis = basisHistory.get(idx);
         int m = T.length;
-        int totalCols = T[0].length;
+        int cols = varNames.length;
+        int rhs = T[0].length - 1;
 
-        String[] columnas = new String[varNames.length + 2];
-        columnas[0] = "Base";
-        for (int j = 0; j < varNames.length; j++) {
-            columnas[j + 1] = varNames[j];
+        // Cj del usuario separado en (constante, coeficiente de M)
+        double[] cjC = new double[cols];
+        double[] cjM = new double[cols];
+        for (int k = 0; k < numVars; k++) {
+            cjC[k] = cUsuario[k];
         }
-        columnas[columnas.length - 1] = "RHS";
-
-        Object[][] datos = new Object[m + 1][columnas.length];
-        for (int i = 0; i < m; i++) {
-            datos[i][0] = varNames[basis[i]];
-            for (int j = 0; j < totalCols - 1; j++) {
-                datos[i][j + 1] = fmt(T[i][j]);
+        for (int j = 0; j < cols; j++) {
+            if (esArtificial[j]) {
+                cjM[j] = esMin ? 1.0 : -1.0;
             }
-            datos[i][columnas.length - 1] = fmt(T[i][totalCols - 1]);
         }
-        datos[m][0] = "Z";
-        for (int j = 0; j < totalCols - 1; j++) {
-            datos[m][j + 1] = fmtM(zc[j], zm[j]);
-        }
-        datos[m][columnas.length - 1] = fmtM(zc[totalCols - 1], zm[totalCols - 1]);
 
-        // ---- matriz auxiliar de colores ----
-        int filasTabla = m + 1;
-        int colsTabla = columnas.length;
-        int[][] aux = new int[filasTabla][colsTabla];
+        TableroVista.Datos d = new TableroVista.Datos();
+        d.variables = varNames.clone();
+        d.cj = new String[cols];
+        for (int j = 0; j < cols; j++) {
+            d.cj[j] = fmtM(cjC[j], cjM[j]);
+        }
+        d.cb = new String[m];
+        d.xb = new String[m];
+        d.cuerpo = new String[m][cols];
+        d.sol = new String[m];
+        double[] zjC = new double[cols];
+        double[] zjM = new double[cols];
+        double zC = 0, zMp = 0;
+        for (int i = 0; i < m; i++) {
+            double cbC = cjC[basis[i]];
+            double cbM = cjM[basis[i]];
+            d.cb[i] = fmtM(cbC, cbM);
+            d.xb[i] = varNames[basis[i]];
+            for (int j = 0; j < cols; j++) {
+                d.cuerpo[i][j] = fmt(T[i][j]);
+                zjC[j] += cbC * T[i][j];
+                zjM[j] += cbM * T[i][j];
+            }
+            d.sol[i] = fmt(T[i][rhs]);
+            zC += cbC * T[i][rhs];
+            zMp += cbM * T[i][rhs];
+        }
+        d.zj = new String[cols];
+        d.pj = new String[cols];
+        for (int j = 0; j < cols; j++) {
+            d.zj[j] = fmtM(zjC[j], zjM[j]);
+            d.pj[j] = fmtM(cjC[j] - zjC[j], cjM[j] - zjM[j]);
+        }
+        d.z = fmtM(zC, zMp);
+
+        String info;
+        if (idx < tableros.size() - 1) {
+            int fila = pivotRowHistory.get(idx + 1);
+            int col = pivotColHistory.get(idx + 1);
+            d.filaPivote = fila;
+            d.colPivote = col;
+            d.theta = new String[m];
+            for (int i = 0; i < m; i++) {
+                double a = T[i][col];
+                d.theta[i] = a > EPS ? fmt(T[i][rhs] / a) : "—";
+            }
+            info = "Entra " + varNames[col] + ", sale " + varNames[basis[fila]];
+        } else if (!factible) {
+            info = "Sin solución factible: una A sigue en la base con valor > 0";
+        } else {
+            info = esMin ? "Óptimo: todos los Pj ≥ 0" : "Óptimo: todos los Pj ≤ 0";
+        }
 
         if (idx > 0) {
-            double[][] anterior = tableaus.get(idx - 1);
-            double[] zcAnt = zConst.get(idx - 1);
-            double[] zmAnt = zM.get(idx - 1);
+            double[][] anterior = tableros.get(idx - 1);
+            d.cambio = new boolean[m][cols + 1];
             for (int i = 0; i < m; i++) {
-                for (int j = 1; j < colsTabla; j++) {
-                    if (Math.abs(T[i][j - 1] - anterior[i][j - 1]) > 1e-6) {
-                        aux[i][j] = 1;
-                    }
-                }
-            }
-            for (int j = 1; j < colsTabla; j++) {
-                if (Math.abs(zc[j - 1] - zcAnt[j - 1]) > 1e-6 || Math.abs(zm[j - 1] - zmAnt[j - 1]) > 1e-6) {
-                    aux[m][j] = 1;
+                for (int j = 0; j <= cols; j++) {
+                    d.cambio[i][j] = Math.abs(T[i][j] - anterior[i][j]) > 1e-6;
                 }
             }
         }
 
-        int pRow = pivotRowHistory.get(idx);
-        int pCol = pivotColHistory.get(idx);
-        if (pRow >= 0 && pCol >= 0) {
-            for (int j = 0; j < colsTabla; j++) {
-                aux[pRow][j] = 2;
-            }
-            for (int i = 0; i < filasTabla; i++) {
-                if (aux[i][pCol + 1] != 3) {
-                    aux[i][pCol + 1] = 2;
-                }
-            }
-            aux[pRow][pCol + 1] = 3;
-        }
-        auxMatActual = aux;
-
-        DefaultTableModel model = new DefaultTableModel(datos, columnas) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-        TablaTableau.setModel(model);
-
-        String info = pasoInfo.get(idx);
-        lblPaso.setText("Tabla " + (idx + 1) + " de " + tableaus.size() + (info != null ? "  —  " + info : ""));
+        TableroVista.mostrar(TablaTablero, d);
+        lblPaso.setText("Tablero " + (idx + 1) + " de " + tableros.size() + "  —  " + info);
+        lblPaso.setToolTipText(lblPaso.getText());
         btnAnterior.setEnabled(idx > 0);
-        btnSiguiente.setEnabled(idx < tableaus.size() - 1);
+        btnSiguiente.setEnabled(idx < tableros.size() - 1);
 
         txtResultado.setText(construirTextoPaso(idx));
-        TablaTableau.repaint();
     }
 
     /**
-     * Arma el texto de resultado propio de la tabla que se está mostrando:
+     * Arma el texto de resultado propio del tablero que se está mostrando:
      * solución básica de ese paso, si es factible respecto al problema
      * original (ninguna variable artificial sigue en la base con valor
-     * &gt; 0) y si ya es la solución óptima (la última tabla, siempre que
+     * &gt; 0) y si ya es la solución óptima (el último tablero, siempre que
      * además haya resultado factible).
      */
     private String construirTextoPaso(int idx) {
-        double[][] T = tableaus.get(idx);
+        double[][] T = tableros.get(idx);
         int[] basis = basisHistory.get(idx);
         double[] zc = zConst.get(idx);
         double[] zm = zM.get(idx);
@@ -633,16 +615,17 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
                 break;
             }
         }
-        boolean esUltimaTabla = idx == tableaus.size() - 1;
+        boolean esUltimaTabla = idx == tableros.size() - 1;
         boolean esOptimo = esUltimaTabla && factible;
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Tabla ").append(idx + 1).append(" de ").append(tableaus.size()).append(":\n");
+        sb.append("Tablero ").append(idx + 1).append(" de ").append(tableros.size()).append(":\n");
         for (int k = 0; k < numVars; k++) {
             sb.append(varNames[k]).append(" = ").append(fmt(sol[k])).append("\n");
         }
-        double constPaso = esMin ? -zc[totalCols - 1] : zc[totalCols - 1];
-        sb.append("Z = ").append(fmtM(constPaso, zm[totalCols - 1])).append("\n");
+        // la fila Z interna es de maximización: en Min se cambia el signo de las dos partes
+        double signo = esMin ? -1 : 1;
+        sb.append("Z = ").append(fmtM(signo * zc[totalCols - 1], signo * zm[totalCols - 1])).append("\n");
         sb.append("Factible: ").append(factiblePaso ? "Sí" : "No").append("\n");
         if (esUltimaTabla && !factible) {
             sb.append("Óptimo: No — el problema no tiene solución factible");
@@ -681,7 +664,7 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTable TablaTableau;
+    private javax.swing.JTable TablaTablero;
     private javax.swing.JButton btnAnterior;
     private javax.swing.JButton btnSiguiente;
     private javax.swing.JScrollPane jScrollPane1;

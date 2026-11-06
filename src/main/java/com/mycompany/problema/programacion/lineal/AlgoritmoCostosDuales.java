@@ -93,17 +93,19 @@ public class AlgoritmoCostosDuales extends javax.swing.JFrame implements MetodoP
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 setHorizontalAlignment(CENTER);
-                Color fondo = Color.WHITE;
+                Color fondo = Tema.campo();
                 if (auxMatActual != null && row < auxMatActual.length && column < auxMatActual[row].length) {
                     switch (auxMatActual[row][column]) {
                         case 2: fondo = COLOR_ENTRA; break;
                         case 3: fondo = COLOR_MAS; break;
                         case 4: fondo = COLOR_MENOS; break;
                         case 1: fondo = COLOR_CAMBIO; break;
-                        default: fondo = Color.WHITE;
+                        default: fondo = Tema.campo();
                     }
                 }
                 c.setBackground(fondo);
+                // los resaltados de la colorimetría son pastel: encima, texto oscuro también en modo oscuro
+                c.setForeground(fondo.equals(Tema.campo()) ? Tema.tinta() : Tema.textoSobreResaltado());
                 return c;
             }
         });

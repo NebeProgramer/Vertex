@@ -22,7 +22,9 @@ También puedes buscar el instalador o el `.zip` de cualquier versión anterior 
 
 ## Novedades
 
-La versión actual es **2.0.2**: puedes llamar a las variables como quieras (`x10` y `x20`, `x3` y `x15`, `x11`...`x23`, o 10 o más variables) y Simplex, Big M, Simplex Dual, Gráfico y Numérico las resuelven mostrando tus nombres. El selector de algoritmos ahora decide qué métodos ofrecer según la estructura del problema y explica por qué un método no aplica. Ver [Formato de entrada](#formato-de-entrada).
+La versión actual es **2.1.0**: trae el **Simplex Revisado** (el mismo tablero del Simplex, pero cada bloque calculado con B⁻¹: Tablero = B⁻¹·[A | I | R]), el **análisis de sensibilidad** (precios sombra, holguras y rangos, con el botón *Sensibilidad* del Simplex y del Simplex Revisado) y el **modo oscuro**.
+
+La **2.0.2** permitió llamar a las variables como quieras: puedes llamar a las variables como quieras (`x10` y `x20`, `x3` y `x15`, `x11`...`x23`, o 10 o más variables) y Simplex, Big M, Simplex Dual, Gráfico y Numérico las resuelven mostrando tus nombres. El selector de algoritmos ahora decide qué métodos ofrecer según la estructura del problema y explica por qué un método no aplica. Ver [Formato de entrada](#formato-de-entrada).
 
 La **2.0.0** trajo el cambio grande: la ventana principal tiene una nueva pantalla **Texto libre (IA)** en la que escribes el problema tal como viene en el enunciado. Una IA que corre en tu propio equipo lo convierte en función objetivo y restricciones, Vertex elige los algoritmos que aplican y lo carga todo en el Editor para que lo revises y calcules. Las dos pantallas tienen además un botón **Limpiar**. Ver [Texto libre con IA](#texto-libre-con-ia-opcional).
 
@@ -34,8 +36,11 @@ El historial completo de cambios, versión por versión, está en las [Releases]
 - **Texto libre con IA local (opcional):** escribe el enunciado en palabras y Vertex arma el modelo por ti.
 - Botón **Limpiar** en el Editor y en Texto libre.
 - Validación de la sintaxis de las expresiones y de las restricciones.
-- Visualización de tablas y pasos intermedios de los algoritmos, indicando en cada paso si la solución es factible y si ya es óptima.
+- Visualización de los tableros y pasos intermedios de cada algoritmo en un formato amigable, en el que se ve de dónde sale cada resultado (Cj, Cb, Xb, Sol, θ, Zj y Pj = Cj − Zj; holguras y excesos s1, s2... y artificiales A1, A2...), indicando en cada paso si la solución es factible y si ya es óptima.
 - Ayuda teórica por algoritmo: cada ventana de resultados tiene un botón **(?)** que explica cómo funciona el método (fundamento, pasos y un ejemplo resuelto), además de recordar el significado de los colores usados en esa ventana.
+- Ayuda de formulación: el botón **(?)** de la barra de título de la ventana principal explica cómo plantear un problema (variables, función objetivo, restricciones y no negatividad), su modelo matemático y matricial, y cómo escribirlo en Vertex.
+- Análisis de sensibilidad (Simplex y Simplex Revisado): precios sombra, holguras, costos reducidos y rangos de los coeficientes y de los lados derechos.
+- Modo oscuro, con el interruptor ☀️ | 🌙 de la barra de título de la ventana principal; Vertex recuerda tu elección.
 - Gráfica de las restricciones, región factible y solución óptima cuando el problema tiene dos variables, con todos los puntos de intersección factibles marcados y un cuadro flotante con sus valores al pasar el mouse sobre ellos.
 - Formato visual de subíndices para variables como `x1`, `x2` o `x11`.
 - Interfaz moderna con tema personalizado (FlatLaf), incluyendo un menú de historial deslizante.
@@ -52,13 +57,14 @@ El historial completo de cambios, versión por versión, está en las [Releases]
 | --- | --- |
 | Gráfico | Problemas con exactamente dos variables de decisión. |
 | Simplex | Problemas lineales en forma estándar; es el método general. |
+| Simplex Revisado | Los mismos problemas que el Simplex: el tablero se arma con matrices (B⁻¹A, B⁻¹, B⁻¹R y Cbᵀ·B⁻¹) en vez de pivotearlo. |
 | Big M | Restricciones `>=` o `=` que requieren variables artificiales. |
 | Simplex Dual | Casos con restricciones `<=` y términos independientes negativos. |
 | Numérico | Enumeración de soluciones básicas o puntos extremos. |
 | Húngaro | Problemas de asignación con matriz de costos cuadrada. |
 | Costos Duales (MODI) | Problemas de transporte; usa Vogel para la solución inicial y MODI para optimizarla. |
 
-La opción **“Decide por mí”** analiza la estructura de entrada y elige entre los métodos disponibles. Para transporte desbalanceado, el método de Costos Duales agrega una fila o columna ficticia de costo cero. En cualquiera de las 7 ventanas de resultados, el botón **(?)** de la barra de título explica el método correspondiente con el mismo nivel de detalle que una clase de investigación de operaciones.
+La opción **“Decide por mí”** analiza la estructura de entrada y elige entre los métodos disponibles. Para transporte desbalanceado, el método de Costos Duales agrega una fila o columna ficticia de costo cero. En cualquiera de las 8 ventanas de resultados, el botón **(?)** de la barra de título explica el método correspondiente con el mismo nivel de detalle que una clase de investigación de operaciones.
 
 ## Colorimetría
 
@@ -66,15 +72,27 @@ A continuación se especifica una tabla con los colores usados y su significado 
 
 | Color | Muestra | Método / Uso Unificado | RGB | HEX |
 | :--- | :---: | :--- | :--- | :--- |
-| **Naranja** | `🟧` | **Pivote o elemento causante**. Celda pivote exacta (Simplex), número causante de operaciones (Húngaro) y celda que entra a la base (Costos Duales). | `255, 176, 120` | `#FFB078` |
+| **Naranja** | `🟧` | **Pivote o elemento causante**. Celda pivote exacta (Simplex, Simplex Revisado, Big M y Simplex Dual), número causante de operaciones (Húngaro) y celda que entra a la base (Costos Duales). | `255, 176, 120` | `#FFB078` |
 | **Verde Bosque** | `🟩` | **Punto o resultado óptimo**. Punto óptimo (Gráfico) y celda factible y óptima (Numérico). | `40, 150, 70` | `#289646` |
 | **Verde Lima** | `🟢` | **Factible pero no óptimo**. Puntos intermedios (Gráfico) y celdas válidas que no alcanzan el óptimo (Numérico). | `200, 230, 110` | `#C8E66E` |
-| **Verde Claro** | `💚` | **Cambio de estado o celda clave**. Celdas que cambiaron de valor / suman θ (Simplex/Costos) y celdas con valor cero (Húngaro). | `200, 255, 200` | `#C8FFC8` |
-| **Amarillo** | `🟨` | **Área de influencia del pivote**. Fila o columna asociada al pivote (Simplex) o cubierta por líneas de asignación (Húngaro). | `255, 255, 170` | `#FFFFAA` |
+| **Verde Claro** | `💚` | **Cambio de estado o celda clave**. Celdas que cambiaron de valor respecto al tablero anterior (Simplex, Simplex Revisado, Big M, Simplex Dual), celdas que suman θ (Costos Duales) y celdas con valor cero (Húngaro). | `200, 255, 200` | `#C8FFC8` |
+| **Amarillo** | `🟨` | **Área de influencia del pivote**. Fila que sale y columna que entra (Simplex, Simplex Revisado, Big M y Simplex Dual) o cubierta por líneas de asignación (Húngaro). | `255, 255, 170` | `#FFFFAA` |
 | **Rojo** | `🟥` | **Restricción o inviabilidad**. Celdas no factibles (Numérico) y celdas que restan θ (Costos Duales). | `255, 190, 190` | `#FFBEBE` |
 | **Azul** | `🟦` | **Región factible**. Polígono de soluciones válidas en el método Gráfico (con opacidad). | `120, 180, 255` | `#78B4FF` |
 
-Esta misma tabla, junto con el resto de la teoría de cada algoritmo, está disponible dentro de la aplicación desde el botón **(?)** de cada ventana de resultados.
+En el **Simplex Revisado**, además, cada bloque del tablero lleva un tono suave según el producto de matrices del que sale, para saber de dónde viene cada número con solo mirarlo:
+
+| Bloque | Fórmula | Tono |
+| :--- | :--- | :--- |
+| Columnas de las x | B⁻¹A | azul |
+| Columnas de las s | B⁻¹ | naranja suave |
+| Columna Sol | B⁻¹R | amarillo suave |
+| Zj de las x | Cbᵀ·B⁻¹A | rojo suave |
+| Zj de las s | Cbᵀ·B⁻¹ | morado |
+| Z | Cbᵀ·B⁻¹R | rosado |
+| Pj | Cj − Zj | beige |
+
+Esta misma tabla, junto con el resto de la teoría de cada algoritmo, está disponible dentro de la aplicación desde el botón **(?)** de cada ventana de resultados. La ventana de sensibilidad tiene su propio **(?)** en la barra de título, con la explicación de cada columna.
 
 ## Requisitos
 
@@ -222,9 +240,12 @@ src/
 │   ├── java/
 │   │   ├── com/mycompany/problema/programacion/lineal/
 │   │   │   ├── algoritmos/
+│   │   │   │   ├── AnalisisSensibilidad.java
 │   │   │   │   ├── FormatoNumero.java
+│   │   │   │   ├── Matrices.java
 │   │   │   │   ├── Json_History.java
-│   │   │   │   └── MetodoPL.java
+│   │   │   │   ├── MetodoPL.java
+│   │   │   │   └── SimplexRevisado.java
 │   │   │   │
 │   │   │   ├── ia/
 │   │   │   │   ├── AnalizadorProblema.java
@@ -249,6 +270,9 @@ src/
 │   │   │   ├── MetodoGrafico.java
 │   │   │   ├── MetodoNumerico.java
 │   │   │   ├── MetodoSimplex.java
+│   │   │   ├── MetodoSimplexRevisado.java
+│   │   │   ├── TableroVista.java
+│   │   │   ├── VentanaSensibilidad.java
 │   │   │   ├── VentanaAyudaAlgoritmo.java
 │   │   │   ├── GraficoPanel.java
 │   │   │   ├── SubIndiceTextPane.java
@@ -263,6 +287,7 @@ src/
 │   │   │   ├── ActualizacionChecker.java
 │   │   │   ├── FondoMatematico.java
 │   │   │   ├── FondoAzulPlano.java
+│   │   │   ├── Tema.java
 │   │   │   └── Recursos.java
 │   │   │
 │   │   └── SimplexExamples.txt
@@ -281,7 +306,7 @@ Las notas de cada versión, con el detalle de qué cambió y por qué, están en
 
 ## Estado del proyecto
 
-Hay pruebas automatizadas para la conversión de texto libre a modelo (`src/test`, se ejecutan con `mvn test`), pero todavía no para los algoritmos. Si vas a reutilizar el código, verifica los resultados con casos de prueba conocidos.
+Hay pruebas automatizadas (`src/test`, se ejecutan con `mvn test`) para la conversión de texto libre a modelo, la traducción de nombres de variables, el formato numérico, el Simplex Revisado y el análisis de sensibilidad (con valores de referencia de libro). Los demás algoritmos todavía no tienen tests propios. Si vas a reutilizar el código, verifica los resultados con casos de prueba conocidos.
 
 ## ND Studios
 

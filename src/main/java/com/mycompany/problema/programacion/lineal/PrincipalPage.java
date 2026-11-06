@@ -50,10 +50,16 @@ public class PrincipalPage extends javax.swing.JFrame {
      */
     public PrincipalPage() {
         initComponents();
+        // La lista del .form no conoce los métodos nuevos (Simplex Revisado): se arma
+        // desde SeleccionMultiAlgoritmo.NOMBRES para que combo y selector coincidan siempre.
+        String[] metodos = new String[SeleccionMultiAlgoritmo.NOMBRES.length + 1];
+        metodos[0] = "Decide por mi";
+        System.arraycopy(SeleccionMultiAlgoritmo.NOMBRES, 0, metodos, 1, SeleccionMultiAlgoritmo.NOMBRES.length);
+        AlgoritmoBox.setModel(new javax.swing.DefaultComboBoxModel<>(metodos));
         Recursos.aplicarIcono(this);
         ObjetiveFunction.setSoloUnaLinea(true);
-        ObjetiveFunction.setBackground(java.awt.Color.WHITE);
-        jScrollPane3.getViewport().setBackground(java.awt.Color.WHITE);
+        ObjetiveFunction.setBackground(Tema.campo());
+        jScrollPane3.getViewport().setBackground(Tema.campo());
         aplicarEstiloPrincipal();
         reorganizarPrincipal();
         instalarFondoTematico();
@@ -68,12 +74,12 @@ public class PrincipalPage extends javax.swing.JFrame {
     }
 
     private void aplicarEstiloPrincipal() {
-        java.awt.Color tinta = new java.awt.Color(23, 45, 66);
-        java.awt.Color acento = new java.awt.Color(68, 56, 208);
+        java.awt.Color tinta = Tema.tinta();
+        java.awt.Color acento = Tema.acento();
 
-        jPanel1.setBackground(java.awt.Color.WHITE);
+        jPanel1.setBackground(Tema.tarjeta());
         jPanel1.setBorder(javax.swing.BorderFactory.createCompoundBorder(
-                javax.swing.BorderFactory.createLineBorder(new java.awt.Color(220, 226, 234)),
+                javax.swing.BorderFactory.createLineBorder(Tema.borde()),
                 javax.swing.BorderFactory.createEmptyBorder(18, 22, 20, 22)));
         jLabel1.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 20));
         jLabel2.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 20));
@@ -81,15 +87,15 @@ public class PrincipalPage extends javax.swing.JFrame {
         jLabel1.setForeground(tinta);
         jLabel2.setForeground(tinta);
         jLabel3.setForeground(tinta);
-        jLabel4.setForeground(acento);
+        jLabel4.setForeground(Tema.acentoTexto());
         ObjetiveFunction.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 22));
         Restrictions.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 16));
         ZType.putClientProperty("JComponent.roundRect", true);
         CalcButton.setBackground(acento);
         CalcButton.setForeground(java.awt.Color.WHITE);
         CalcButton.setPreferredSize(new java.awt.Dimension(140, 40));
-        jScrollPane1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(215, 222, 231)));
-        jScrollPane3.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(215, 222, 231)));
+        jScrollPane1.setBorder(javax.swing.BorderFactory.createLineBorder(Tema.borde()));
+        jScrollPane3.setBorder(javax.swing.BorderFactory.createLineBorder(Tema.borde()));
     }
 
     private void reorganizarPrincipal() {
@@ -150,10 +156,10 @@ public class PrincipalPage extends javax.swing.JFrame {
     private javax.swing.JPanel crearAvisoIA() {
         avisoIA = new javax.swing.JPanel(new java.awt.BorderLayout(10, 0));
         textoAvisoIA = new javax.swing.JLabel();
-        textoAvisoIA.setForeground(new java.awt.Color(23, 45, 66));
+        textoAvisoIA.setForeground(Tema.tinta());
         javax.swing.JButton cerrar = new javax.swing.JButton("×");
         cerrar.putClientProperty("JButton.buttonType", "toolBarButton");
-        cerrar.setForeground(new java.awt.Color(23, 45, 66));
+        cerrar.setForeground(Tema.tinta());
         cerrar.setFocusable(false);
         cerrar.setToolTipText("Cerrar aviso");
         cerrar.addActionListener(e -> ocultarAvisoIA());
@@ -164,8 +170,8 @@ public class PrincipalPage extends javax.swing.JFrame {
     }
 
     private void mostrarAvisoIA(String html, boolean esError) {
-        java.awt.Color fondo = esError ? new java.awt.Color(255, 241, 241) : new java.awt.Color(238, 240, 251);
-        java.awt.Color borde = esError ? new java.awt.Color(242, 196, 196) : new java.awt.Color(201, 204, 242);
+        java.awt.Color fondo = Tema.avisoFondo(esError);
+        java.awt.Color borde = Tema.avisoBorde(esError);
         avisoIA.setBackground(fondo);
         avisoIA.setBorder(javax.swing.BorderFactory.createCompoundBorder(
                 javax.swing.BorderFactory.createLineBorder(borde),
@@ -265,7 +271,7 @@ public class PrincipalPage extends javax.swing.JFrame {
         firma.setBorder(javax.swing.BorderFactory.createEmptyBorder(4, 0, 0, 0));
         javax.swing.JLabel texto = new javax.swing.JLabel("Un producto");
         texto.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 11));
-        texto.setForeground(new java.awt.Color(120, 132, 146));
+        texto.setForeground(new java.awt.Color(110, 122, 136)); // va sobre la tarjeta blanca del logo
         firma.add(texto);
         javax.swing.ImageIcon marca = Recursos.obtenerMarcaND(12);
         javax.swing.JLabel logo = marca != null ? new javax.swing.JLabel(marca) : new javax.swing.JLabel("ND Studios");
@@ -280,6 +286,146 @@ public class PrincipalPage extends javax.swing.JFrame {
         return firma;
     }
 
+    /**
+     * Interruptor ☀ | 🌙 en la barra de título, justo después del título.
+     * FlatLaf dibuja la barra de título y deja embeber una JMenuBar; para que
+     * el botón quede pegado al título (y no antes), el título se dibuja como
+     * etiqueta de la propia barra y se oculta el de FlatLaf.
+     */
+    private void instalarBotonTemaEnBarraTitulo() {
+        getRootPane().putClientProperty("JRootPane.titleBarShowTitle", false);
+
+        javax.swing.JLabel titulo = new javax.swing.JLabel(getTitle());
+        titulo.putClientProperty("JComponent.titleBarCaption", true); // arrastrar desde el título sigue moviendo la ventana
+        titulo.setForeground(Tema.tinta());
+        titulo.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 6, 0, 10));
+
+        javax.swing.JButton boton = new javax.swing.JButton(new IconoTema(Tema.esOscuro()));
+        boton.putClientProperty("JButton.buttonType", "toolBarButton");
+        boton.setFocusable(false);
+        boton.setToolTipText(Tema.esOscuro() ? "Cambiar al tema claro" : "Cambiar al tema oscuro");
+        boton.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+        boton.addActionListener(e -> alternarTema());
+
+        // (?) a la derecha, como en las ventanas de resultados: cómo formular un problema
+        javax.swing.JButton ayuda = new javax.swing.JButton("(?)");
+        ayuda.putClientProperty("JButton.buttonType", "toolBarButton");
+        ayuda.setFocusable(false);
+        ayuda.setForeground(Tema.tinta());
+        ayuda.setToolTipText("Cómo formular un problema y escribirlo en Vertex");
+        ayuda.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+        ayuda.addActionListener(e -> new VentanaAyudaAlgoritmo(this, "Formulación de un problema", null,
+                VentanaAyudaAlgoritmo.TEORIA_FORMULACION).setVisible(true));
+
+        javax.swing.JMenuBar barra = new javax.swing.JMenuBar();
+        barra.add(titulo);
+        barra.add(boton);
+        barra.add(javax.swing.Box.createHorizontalGlue());
+        barra.add(ayuda);
+        setJMenuBar(barra);
+    }
+
+    /**
+     * Ícono del interruptor de tema: sol y luna en una cápsula, con el modo
+     * actual resaltado. Se dibuja a mano (los emoji ☀️🌙 no tienen color en
+     * Swing y la luna puede salir como un cuadro).
+     */
+    private static final class IconoTema implements javax.swing.Icon {
+
+        private static final int ANCHO = 46;
+        private static final int ALTO = 22;
+        private final boolean oscuro;
+
+        IconoTema(boolean oscuro) {
+            this.oscuro = oscuro;
+        }
+
+        @Override
+        public int getIconWidth() {
+            return ANCHO;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return ALTO;
+        }
+
+        @Override
+        public void paintIcon(java.awt.Component c, java.awt.Graphics g0, int x, int y) {
+            java.awt.Graphics2D g = (java.awt.Graphics2D) g0.create();
+            g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+            g.translate(x, y);
+            // cápsula
+            g.setColor(Tema.borde());
+            g.drawRoundRect(0, 0, ANCHO - 1, ALTO - 1, ALTO, ALTO);
+            // círculo del modo actual: izquierda = claro (sol), derecha = oscuro (luna)
+            int d = ALTO - 4;
+            int cx = oscuro ? ANCHO - d - 2 : 2;
+            g.setColor(Tema.acento());
+            g.fillOval(cx, 2, d, d);
+
+            java.awt.Color activo = java.awt.Color.WHITE;
+            java.awt.Color inactivo = Tema.textoSuave();
+            pintarSol(g, 2 + d / 2.0, ALTO / 2.0, oscuro ? inactivo : activo);
+            pintarLuna(g, ANCHO - 2 - d / 2.0, ALTO / 2.0, oscuro ? activo : inactivo);
+            g.dispose();
+        }
+
+        private static void pintarSol(java.awt.Graphics2D g, double cx, double cy, java.awt.Color color) {
+            g.setColor(color);
+            g.fill(new java.awt.geom.Ellipse2D.Double(cx - 3, cy - 3, 6, 6));
+            g.setStroke(new java.awt.BasicStroke(1.4f, java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND));
+            for (int k = 0; k < 8; k++) {
+                double a = Math.PI / 4 * k;
+                g.draw(new java.awt.geom.Line2D.Double(cx + Math.cos(a) * 5, cy + Math.sin(a) * 5,
+                        cx + Math.cos(a) * 7, cy + Math.sin(a) * 7));
+            }
+        }
+
+        /** Luna creciente: un círculo menos otro desplazado. */
+        private static void pintarLuna(java.awt.Graphics2D g, double cx, double cy, java.awt.Color color) {
+            java.awt.geom.Area luna = new java.awt.geom.Area(new java.awt.geom.Ellipse2D.Double(cx - 6, cy - 6, 12, 12));
+            luna.subtract(new java.awt.geom.Area(new java.awt.geom.Ellipse2D.Double(cx - 2.5, cy - 8, 11, 11)));
+            g.setColor(color);
+            g.fill(luna);
+        }
+    }
+
+    /**
+     * Cambia entre tema claro y oscuro. Los colores de Vertex se leen al
+     * construir cada ventana (ver Tema), así que la ventana principal se
+     * vuelve a crear en el mismo lugar, conservando lo escrito: Z,
+     * restricciones, tipo, algoritmos marcados, el texto libre y la pestaña.
+     * Las ventanas de resultados que ya estén abiertas toman el look and
+     * feel nuevo; las que se abran después, también sus colores.
+     */
+    private void alternarTema() {
+        org.json.JSONObject estado = new org.json.JSONObject()
+                .put("z", ObjetiveFunction.getText())
+                .put("Tipo", String.valueOf(ZType.getSelectedItem()))
+                .put("R", Arrays.asList(Restrictions.getText().split("\\r?\\n", -1)))
+                .put("Metodos", seleccionMulti.getSeleccionados());
+        String enunciado = pantallaTextoLibre.getEnunciado();
+        boolean enTextoLibre = tabTexto.isSelected();
+        java.awt.Rectangle limites = getBounds();
+        int estadoVentana = getExtendedState();
+
+        Tema.setOscuro(!Tema.esOscuro());
+        Tema.aplicarLookAndFeel();
+        com.formdev.flatlaf.FlatLaf.updateUI();
+
+        PrincipalPage nueva = new PrincipalPage();
+        nueva.setBounds(limites);
+        nueva.setExtendedState(estadoVentana);
+        nueva.menuHistorial.inyectar(estado);
+        nueva.pantallaTextoLibre.setEnunciado(enunciado);
+        nueva.setVisible(true);
+        if (enTextoLibre) {
+            nueva.mostrarPantalla(CARTA_TEXTO);
+        }
+        dispose();
+    }
+
     /** Selector de pantalla tipo segmentado, al lado del logo. */
     private javax.swing.JPanel crearPestanas() {
         tabEditor = crearPestana("Editor", "Escribe Z y las restricciones a mano");
@@ -292,9 +438,9 @@ public class PrincipalPage extends javax.swing.JFrame {
         tabTexto.addActionListener(e -> mostrarPantalla(CARTA_TEXTO));
 
         javax.swing.JPanel tarjeta = new javax.swing.JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 0));
-        tarjeta.setBackground(java.awt.Color.WHITE);
+        tarjeta.setBackground(Tema.tarjeta());
         tarjeta.setBorder(javax.swing.BorderFactory.createCompoundBorder(
-                javax.swing.BorderFactory.createLineBorder(new java.awt.Color(220, 226, 234)),
+                javax.swing.BorderFactory.createLineBorder(Tema.borde()),
                 javax.swing.BorderFactory.createEmptyBorder(6, 6, 6, 6)));
         tarjeta.add(tabEditor);
         tarjeta.add(tabTexto);
@@ -307,9 +453,10 @@ public class PrincipalPage extends javax.swing.JFrame {
         b.setFocusPainted(false);
         b.setToolTipText(tooltip);
         b.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
-        b.putClientProperty("FlatLaf.style", "background: #FFFFFF; foreground: #172D42;"
-                + " selectedBackground: #4438D0; selectedForeground: #FFFFFF;"
-                + " hoverBackground: #EEF0FB; borderWidth: 0; focusWidth: 0; arc: 8");
+        b.putClientProperty("FlatLaf.style", "background: " + Tema.hex(Tema.tarjeta())
+                + "; foreground: " + Tema.hex(Tema.tinta())
+                + "; selectedBackground: #4438D0; selectedForeground: #FFFFFF;"
+                + " hoverBackground: " + Tema.hex(Tema.hoverSecundario()) + "; borderWidth: 0; focusWidth: 0; arc: 8");
         return b;
     }
 
@@ -328,9 +475,9 @@ public class PrincipalPage extends javax.swing.JFrame {
 
     private javax.swing.JPanel crearTarjeta() {
         javax.swing.JPanel tarjeta = new javax.swing.JPanel(new java.awt.BorderLayout(12, 10));
-        tarjeta.setBackground(java.awt.Color.WHITE);
+        tarjeta.setBackground(Tema.tarjeta());
         tarjeta.setBorder(javax.swing.BorderFactory.createCompoundBorder(
-                javax.swing.BorderFactory.createLineBorder(new java.awt.Color(220, 226, 234)),
+                javax.swing.BorderFactory.createLineBorder(Tema.borde()),
                 javax.swing.BorderFactory.createEmptyBorder(14, 16, 14, 16)));
         return tarjeta;
     }
@@ -400,8 +547,11 @@ public class PrincipalPage extends javax.swing.JFrame {
             case "Grafico":
                 return p.variables == 2 ? null : "Requiere exactamente 2 variables (hay " + p.variables + ")";
             case "Simplex":
-                return (p.hayMayorIgual || p.hayIgual)
-                        ? "Solo restricciones <= (para >= o = usa Big M)" : null;
+            case "Simplex Revisado": // mismos requisitos: base inicial = holguras
+                if (p.hayMayorIgual || p.hayIgual) {
+                    return "Solo restricciones <= (para >= o = usa Big M)";
+                }
+                return p.hayRhsNegativo ? "Lado derecho negativo (usa Simplex Dual)" : null;
             case "Big M":
                 return (p.hayMayorIgual || p.hayIgual)
                         ? null : "Requiere alguna restricción >= o = (si no, usa Simplex)";
@@ -535,6 +685,35 @@ public class PrincipalPage extends javax.swing.JFrame {
         return validas.toArray(new String[0]);
     }
 
+    /**
+     * Número de cada método en el switch de Calcular (el histórico 0-7, y 8
+     * para Simplex Revisado), a partir de su nombre en el combo. -1 si no existe.
+     */
+    private static int numeroDeMetodo(String nombre) {
+        switch (nombre) {
+            case "Decide por mi":
+                return 0;
+            case "Grafico":
+                return 1;
+            case "Numerico":
+                return 2;
+            case "Simplex":
+                return 3;
+            case "Simplex Revisado":
+                return 8;
+            case "Big M":
+                return 4;
+            case "Simplex Dual":
+                return 5;
+            case "Costos Dual":
+                return 6;
+            case "Hungaro":
+                return 7;
+            default:
+                return -1;
+        }
+    }
+
     /** Crea una instancia nueva del algoritmo por nombre, para MultiCalculos. */
     private com.mycompany.problema.programacion.lineal.algoritmos.MetodoPL crearInstancia(String nombreAlgoritmo) {
         switch (nombreAlgoritmo) {
@@ -544,6 +723,8 @@ public class PrincipalPage extends javax.swing.JFrame {
                 return new MetodoNumerico();
             case "Simplex":
                 return new MetodoSimplex();
+            case "Simplex Revisado":
+                return new MetodoSimplexRevisado();
             case "Big M":
                 return new MetodoBigM();
             case "Simplex Dual":
@@ -576,9 +757,10 @@ public class PrincipalPage extends javax.swing.JFrame {
         FondoMatematico fondo = new FondoMatematico();
         fondo.setLayout(new java.awt.BorderLayout(0, 10));
         javax.swing.JPanel tarjetaLogo = new javax.swing.JPanel(new java.awt.BorderLayout());
+        // siempre blanca, también en modo oscuro: los logos de Vertex y ND tienen texto oscuro sobre transparente
         tarjetaLogo.setBackground(java.awt.Color.WHITE);
         tarjetaLogo.setBorder(javax.swing.BorderFactory.createCompoundBorder(
-            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(220, 226, 234)),
+            javax.swing.BorderFactory.createLineBorder(Tema.borde()),
             javax.swing.BorderFactory.createEmptyBorder(8, 16, 8, 16)));
         tarjetaLogo.add(lblLogo, java.awt.BorderLayout.CENTER);
         tarjetaLogo.add(crearFirmaMarca(), java.awt.BorderLayout.SOUTH);
@@ -587,6 +769,7 @@ public class PrincipalPage extends javax.swing.JFrame {
         barraSuperior.setOpaque(false);
         barraSuperior.add(tarjetaLogo);
         barraSuperior.add(crearPestanas());
+        instalarBotonTemaEnBarraTitulo();
         fondo.add(barraSuperior, java.awt.BorderLayout.NORTH);
 
         // Dos pantallas en la misma ventana: el Editor de siempre (jPanel1,
@@ -662,11 +845,7 @@ public class PrincipalPage extends javax.swing.JFrame {
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(40, 60, 110));
-        jLabel1.setText("Z (?)");
-        jLabel1.setToolTipText("<html><b>Función objetivo</b><br>"
-                + "Elige Max o Min en el selector de al lado, y escribe la función<br>"
-                + "con coeficiente + x + subíndice, ej: <b>3x1 + 5x2</b>.<br>"
-                + "No hace falta escribir \"Z =\", ya está puesto.</html>");
+        jLabel1.setText("Z");
 
         ZType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Max", "Min" }));
         ZType.addActionListener(new java.awt.event.ActionListener() {
@@ -677,11 +856,7 @@ public class PrincipalPage extends javax.swing.JFrame {
 
         jLabel2.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(40, 60, 110));
-        jLabel2.setText("Sujeto a: (?)");
-        jLabel2.setToolTipText("<html><b>Restricciones</b><br>"
-                + "Una restricción por línea (Enter para agregar otra).<br>"
-                + "Operadores permitidos: <b>&lt;=</b>, <b>&gt;=</b>, <b>=</b>.<br>"
-                + "Ej: <b>2x1 + 3x2 &lt;= 18</b></html>");
+        jLabel2.setText("Sujeto a:");
 
         Restrictions.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
@@ -834,10 +1009,13 @@ public class PrincipalPage extends javax.swing.JFrame {
             }
 
             int metodo;
-            int indiceAlgoritmo = AlgoritmoBox.getSelectedIndex();
-            // Para los algoritmos de PL general (índices 1-5): el problema en x1..xn
+            // Se decide por NOMBRE: la posición en el combo cambia al agregar métodos
+            // (Simplex Revisado va entre Simplex y Big M). Los números son los de siempre.
+            int indiceAlgoritmo = numeroDeMetodo(String.valueOf(AlgoritmoBox.getSelectedItem()));
+            // Para los algoritmos de PL general (1-5 y 8): el problema en x1..xn
             // (traducido si venía en xij). FO y R quedan intactos para el historial.
-            ProblemaPlano p = (indiceAlgoritmo >= 1 && indiceAlgoritmo <= 5) ? planoPara(FO, R) : null;
+            ProblemaPlano p = ((indiceAlgoritmo >= 1 && indiceAlgoritmo <= 5) || indiceAlgoritmo == 8)
+                    ? planoPara(FO, R) : null;
             switch (indiceAlgoritmo) {
                 case 0:
                     // interpretar el algoritmo a usar según las características del problema
@@ -899,6 +1077,10 @@ public class PrincipalPage extends javax.swing.JFrame {
                 case 3:
                     metodo = 3;
                     resolverYMostrar(new MetodoSimplex(), p, tipo, "Simplex");
+                    break;
+                case 8: // Simplex Revisado: número nuevo (3, 4 y 5 los usan pair() y los check*()), mismo lugar que en el combo
+                    metodo = 8;
+                    resolverYMostrar(new MetodoSimplexRevisado(), p, tipo, "Simplex Revisado");
                     break;
                 case 4:
                     metodo = 4;
@@ -1496,23 +1678,22 @@ private boolean pair(int metodo, String FO, String[] R) {
         case 3: // Simplex: agregar holguras/excesos (y añadirlas a FO con coef 0)
             List<String> nuevasRestricciones = new ArrayList<>();
             String nuevaFOSB1 = FO == null ? "" : FO.trim();
-            int holguraCount = 0;
-            int excesoCount = 0;
+            // como en los apuntes: holgura (+s) o exceso (−s) con el número de su restricción
+            int numRestriccion = 0;
 
             for (String r : R) {
+                numRestriccion++;
                 String[] partes = parseRestriction(r);
                 String lhs = partes[0].trim();
                 String op  = partes[1].trim();
                 String rhs = partes[2].trim();
 
                 if (op.equals("<=")) {
-                    holguraCount++;
-                    String sVar = "S" + holguraCount;
+                    String sVar = "s" + numRestriccion;
                     nuevasRestricciones.add(lhs + " + " + sVar + " = " + rhs);
                     nuevaFOSB1 = addZeroVarToFO(nuevaFOSB1, sVar);
                 } else if (op.equals(">=")) {
-                    excesoCount++;
-                    String eVar = "E" + excesoCount;
+                    String eVar = "s" + numRestriccion;
                     nuevasRestricciones.add(lhs + " - " + eVar + " = " + rhs);
                     nuevaFOSB1 = addZeroVarToFO(nuevaFOSB1, eVar);
                 } else { // '='
@@ -1527,17 +1708,17 @@ private boolean pair(int metodo, String FO, String[] R) {
         case 4: // Big-M: agregar artificiales y penalizarlas en FO con M*(A#)
             nuevasRestricciones = new ArrayList<>();
             StringBuilder nuevaFOSB = new StringBuilder(FO == null ? "" : FO.trim());
-            int artificialCount = 0;
+            int numRestriccionA = 0;
 
             for (String r : R) {
+                numRestriccionA++;
                 String[] partes = parseRestriction(r);
                 String lhs = partes[0].trim();
                 String op  = partes[1].trim();
                 String rhs = partes[2].trim();
 
                 if (op.equals(">=") || (op.equals("=") && !isZero(rhs))) {
-                    artificialCount++;
-                    String artVar = "A" + artificialCount;
+                    String artVar = "A" + numRestriccionA;   // A_i con el número de su restricción
                     // Para >=: normalmente harías "- e + a = rhs", pero para simplificar
                     // convertimos a igualdad con artificial y (opcional) exceso
                     // Aquí agregamos la artificial directamente:
