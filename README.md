@@ -82,15 +82,15 @@ A continuación se especifica una tabla con los colores usados y su significado 
 
 En el **Simplex Revisado**, además, cada bloque del tablero lleva un tono suave según el producto de matrices del que sale, para saber de dónde viene cada número con solo mirarlo:
 
-| Bloque | Fórmula | Tono |
-| :--- | :--- | :--- |
-| Columnas de las x | B⁻¹A | azul |
-| Columnas de las s | B⁻¹ | naranja suave |
-| Columna Sol | B⁻¹R | amarillo suave |
-| Zj de las x | Cbᵀ·B⁻¹A | rojo suave |
-| Zj de las s | Cbᵀ·B⁻¹ | morado |
-| Z | Cbᵀ·B⁻¹R | rosado |
-| Pj | Cj − Zj | beige |
+| Color | Muestra | Bloque / Fórmula | RGB | HEX |
+| :--- | :---: | :--- | :--- | :--- |
+| **Azul Suave** | `🟦` | **B⁻¹A**. Columnas de las variables x. | `214, 230, 250` | `#D6E6FA` |
+| **Naranja Suave** | `🟧` | **B⁻¹**. Columnas de las holguras s. | `252, 233, 206` | `#FCE9CE` |
+| **Amarillo Suave** | `🟨` | **B⁻¹R**. Columna Sol. | `250, 244, 196` | `#FAF4C4` |
+| **Rojo Suave** | `🟥` | **Cbᵀ·B⁻¹A**. Fila Zj en las columnas de las x. | `244, 216, 210` | `#F4D8D2` |
+| **Morado Suave** | `🟪` | **Cbᵀ·B⁻¹**. Fila Zj en las columnas de las s. | `220, 218, 244` | `#DCDAF4` |
+| **Rosado** | `🩷` | **Cbᵀ·B⁻¹R**. Valor de Z (fila Zj, columna Sol). | `248, 214, 232` | `#F8D6E8` |
+| **Beige** | `🟫` | **Pj = Cj − Zj**. Fila Pj. | `252, 241, 226` | `#FCF1E2` |
 
 Esta misma tabla, junto con el resto de la teoría de cada algoritmo, está disponible dentro de la aplicación desde el botón **(?)** de cada ventana de resultados. La ventana de sensibilidad tiene su propio **(?)** en la barra de título, con la explicación de cada columna.
 
