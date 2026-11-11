@@ -141,11 +141,14 @@ public class Json_History {
         }
     }
 
-    private static JSONObject construirObjeto(String id, String z, String[] R, String tipo, String[] metodos) {
+    private static JSONObject construirObjeto(String id, String z, String[] R, String tipo, String[] metodos, String modo) {
         JSONObject obj = new JSONObject();
         obj.put("id", id);
         obj.put("z", z);
         obj.put("Tipo", tipo);
+        if (MODO_DUAL.equals(modo)) {
+            obj.put("Modo", MODO_DUAL); // ausente = primal: el history.json de antes sigue sirviendo
+        }
         obj.put("R", R != null ? Arrays.asList(R) : new ArrayList<>());
         obj.put("Metodos", metodos != null ? Arrays.asList(metodos) : new ArrayList<>());
         return obj;
@@ -155,7 +158,10 @@ public class Json_History {
     // Comparación de "mismo problema"
     // ---------------------------------------------------------------
 
-    private static boolean mismoProblema(JSONObject obj, String z, String[] R, String tipo) {
+    private static boolean mismoProblema(JSONObject obj, String z, String[] R, String tipo, String modo) {
+        if (!obj.optString("Modo", MODO_PRIMAL).equals(modo)) {
+            return false;
+        }
         if (!obj.optString("Tipo", "").equals(tipo)) {
             return false;
         }
@@ -197,22 +203,33 @@ public class Json_History {
     // API principal: se llama cada vez que el usuario presiona "Calcular"
     // ---------------------------------------------------------------
 
+    /** Valor del campo "Modo": problema primal (variables x). Es el que se asume si falta. */
+    public static final String MODO_PRIMAL = "P";
+    /** Valor del campo "Modo": problema dual (variables y). */
+    public static final String MODO_DUAL = "D";
+
+    /** Igual que {@link #guardarCalculo(String, String[], String, String[], String)}, para un problema primal. */
+    public String guardarCalculo(String z, String[] R, String tipo, String[] metodos) {
+        return guardarCalculo(z, R, tipo, metodos, MODO_PRIMAL);
+    }
+
     /**
      * Guarda el cálculo en el historial, o actualiza uno existente si el
-     * problema (Z + restricciones + tipo) ya estaba guardado:
+     * problema (Z + restricciones + tipo + modo P/D) ya estaba guardado:
      *  - Si ya existe un elemento con el MISMO problema: se mueve a la
      *    posición 0 (más reciente) y, si la lista de métodos cambió, se
      *    reemplaza por la nueva.
      *  - Si no existe: se agrega un elemento nuevo en la posición 0.
      *
+     * @param modo {@link #MODO_PRIMAL} o {@link #MODO_DUAL}
      * @return el id del elemento guardado/actualizado.
      */
-    public String guardarCalculo(String z, String[] R, String tipo, String[] metodos) {
+    public String guardarCalculo(String z, String[] R, String tipo, String[] metodos, String modo) {
         JSONArray arr = leerArray();
 
         int indiceExistente = -1;
         for (int i = 0; i < arr.length(); i++) {
-            if (mismoProblema(arr.getJSONObject(i), z, R, tipo)) {
+            if (mismoProblema(arr.getJSONObject(i), z, R, tipo, modo)) {
                 indiceExistente = i;
                 break;
             }
@@ -235,7 +252,7 @@ public class Json_History {
             arr = nuevo;
         } else {
             id = generarIdHex(15);
-            JSONObject nuevoObj = construirObjeto(id, z, R, tipo, metodos);
+            JSONObject nuevoObj = construirObjeto(id, z, R, tipo, metodos, modo);
             JSONArray nuevo = new JSONArray();
             nuevo.put(nuevoObj);
             for (int i = 0; i < arr.length(); i++) {

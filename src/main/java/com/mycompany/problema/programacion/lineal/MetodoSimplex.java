@@ -69,7 +69,7 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
         VentanaPrefs.aplicar(this);
         Recursos.instalarAyudaEnBarraTitulo(this, "Simplex",
                 "<html><b>Colorimetría — Simplex</b><br>&#128992; Naranja: celda pivote<br>&#128993; Amarillo: fila y columna del pivote<br>&#128994; Verde: números afectados por el cambio de variable</html>",
-                VentanaAyudaAlgoritmo.TEORIA_SIMPLEX);
+                Dualidad.teoria(VentanaAyudaAlgoritmo.TEORIA_SIMPLEX, VentanaAyudaAlgoritmo.TEORIA_SIMPLEX_DUAL));
         Recursos.agregarBotonBarraTitulo(this, "Sensibilidad",
                 "Precios sombra, holguras y rangos de la solución óptima", this::mostrarSensibilidad);
         Recursos.envolverEnFondoAzul(this);
@@ -548,8 +548,8 @@ public class MetodoSimplex extends javax.swing.JFrame implements MetodoPL {
             sb.append(varNames[k]).append(" = ").append(fmt(sol[k])).append("\n");
         }
         sb.append("Z = ").append(fmt(zPaso)).append("\n");
-        sb.append("Factible: ").append(factiblePaso ? "Sí" : "No").append("\n");
-        sb.append("Óptimo: ").append(esOptimo ? "Sí" : "No, aún se puede mejorar");
+        sb.append("Factible: ").append(factiblePaso ? "Sí" : "No — ∃ Sol < 0").append("\n");
+        sb.append("Óptimo: ").append(esOptimo ? "Sí" : Recursos.motivoNoOptimo(esMin));
         return sb.toString();
     }
 

@@ -116,4 +116,18 @@ class MapeoVariablesTest {
         String[] rs = {"x11+x12<=4"};
         assertEquals(MapeoVariables.traducirDobleIndice(fo, rs).getFOPlano(), MapeoVariables.compactar(fo, rs).getFOPlano());
     }
+
+    /** Problema dual: los algoritmos reciben x, las ventanas muestran y (con y sin traducción de índices). */
+    @Test
+    void conLetraY() {
+        MapeoVariables y = MapeoVariables.identidad().conLetra('y');
+        assertEquals("y1", y.nombreDe(1));
+        assertEquals("y12", y.nombreDe(12));
+        assertTrue(y.esIdentidad());
+        assertEquals("x3", MapeoVariables.identidad().conLetra('X').nombreDe(3));
+
+        MapeoVariables t = MapeoVariables.compactar("x10+x20", new String[]{"x10<=4"}).getMapeo().conLetra('y');
+        assertEquals("y10", t.nombreDe(1));
+        assertEquals("y20", t.nombreDe(2));
+    }
 }

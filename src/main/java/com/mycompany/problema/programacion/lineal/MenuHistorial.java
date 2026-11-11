@@ -56,6 +56,13 @@ public class MenuHistorial {
     /** Se ejecuta después de cada inyección (p. ej. volver a la pestaña Editor). */
     private Runnable alInyectar = () -> {
     };
+    /**
+     * Se ejecuta al empezar cada inyección con el modo guardado (true =
+     * problema dual, en y), antes de escribir Z y las restricciones, para
+     * que el selector evalúe la compatibilidad con la letra correcta.
+     */
+    private java.util.function.Consumer<Boolean> alCambiarModo = dual -> {
+    };
 
     private final BotonFade boton;
     private final JPanel panel;
@@ -283,7 +290,8 @@ public class MenuHistorial {
      */
     private static String detalleCompleto(JSONObject obj) {
         StringBuilder sb = new StringBuilder("<html><b>");
-        sb.append(obj.optString("Tipo", "")).append(" Z = ").append(obj.optString("z", "")).append("</b><br>");
+        boolean dual = Json_History.MODO_DUAL.equals(obj.optString("Modo", Json_History.MODO_PRIMAL));
+        sb.append(obj.optString("Tipo", "")).append(dual ? " Zd = " : " Z = ").append(obj.optString("z", "")).append("</b><br>");
         JSONArray r = obj.optJSONArray("R");
         if (r != null) {
             for (int i = 0; i < r.length(); i++) {
@@ -473,12 +481,18 @@ public class MenuHistorial {
         this.alInyectar = alInyectar;
     }
 
+    public void setAlCambiarModo(java.util.function.Consumer<Boolean> alCambiarModo) {
+        this.alCambiarModo = alCambiarModo;
+    }
+
     /**
      * Carga un problema con el formato de history.json (z, Tipo, R,
      * Metodos) en el Editor. Lo usan tanto el historial como la pantalla de
      * texto libre (IA), para que ambos inyecten exactamente igual.
      */
     public void inyectar(JSONObject obj) {
+        // sin "Modo" (history.json de antes, la IA) es un problema primal; no se dualiza: el texto ya viene en y
+        alCambiarModo.accept(Json_History.MODO_DUAL.equals(obj.optString("Modo", Json_History.MODO_PRIMAL)));
         campoZ.setText(obj.optString("z", "").trim());
         String tipo = obj.optString("Tipo", "Max");
         tipoBox.setSelectedItem(tipo);

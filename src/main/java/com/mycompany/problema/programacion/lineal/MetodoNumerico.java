@@ -71,7 +71,7 @@ public class MetodoNumerico extends javax.swing.JFrame implements MetodoPL {
         VentanaPrefs.aplicar(this);
         Recursos.instalarAyudaEnBarraTitulo(this, "Método Numérico",
                 "<html><b>Colorimetría — Numérico</b><br>&#128992;&#65039; Rojo: no factible, no óptima<br>&#127811; Verde lima: factible, no óptima<br>&#127795; Verde bosque: factible y óptima</html>",
-                VentanaAyudaAlgoritmo.TEORIA_NUMERICO);
+                Dualidad.teoria(VentanaAyudaAlgoritmo.TEORIA_NUMERICO, VentanaAyudaAlgoritmo.TEORIA_NUMERICO_DUAL));
         Recursos.envolverEnFondoAzul(this);
         Recursos.modernizarVentana(this);
         instalarRendererColores(TablaSoluciones);

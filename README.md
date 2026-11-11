@@ -24,6 +24,8 @@ También puedes buscar el instalador o el `.zip` de cualquier versión anterior 
 
 La versión actual es **2.1.0**: trae el **Simplex Revisado** (el mismo tablero del Simplex, pero cada bloque calculado con B⁻¹: Tablero = B⁻¹·[A | I | R]), el **análisis de sensibilidad** (precios sombra, holguras y rangos, con el botón *Sensibilidad* del Simplex y del Simplex Revisado) y el **modo oscuro**.
 
+En prueba, la **2.2.0.1 (experimental)** trae la **dualidad**: la Z de la función objetivo tiene un superíndice **P / D** y un subíndice **Max / Min** que se cambian con un clic. Con la **P** pasada a **D**, el problema escrito se convierte en su dual (escrito con variables `y`) y las ayudas **(?)** muestran la teoría del problema dual. Ver [Problema dual](#problema-dual). No reemplaza a la 2.1.0 como versión estable.
+
 La **2.0.2** permitió llamar a las variables como quieras: puedes llamar a las variables como quieras (`x10` y `x20`, `x3` y `x15`, `x11`...`x23`, o 10 o más variables) y Simplex, Big M, Simplex Dual, Gráfico y Numérico las resuelven mostrando tus nombres. El selector de algoritmos ahora decide qué métodos ofrecer según la estructura del problema y explica por qué un método no aplica. Ver [Formato de entrada](#formato-de-entrada).
 
 La **2.0.0** trajo el cambio grande: la ventana principal tiene una nueva pantalla **Texto libre (IA)** en la que escribes el problema tal como viene en el enunciado. Una IA que corre en tu propio equipo lo convierte en función objetivo y restricciones, Vertex elige los algoritmos que aplican y lo carga todo en el Editor para que lo revises y calcules. Las dos pantallas tienen además un botón **Limpiar**. Ver [Texto libre con IA](#texto-libre-con-ia-opcional).
@@ -33,13 +35,14 @@ El historial completo de cambios, versión por versión, está en las [Releases]
 ## Funcionalidades
 
 - Optimización de problemas de **maximización** y **minimización**.
+- **Problema dual (experimental):** un clic en el superíndice de Z (Z<sup>P</sup> ⇄ Z<sup>D</sup>) arma el dual del problema escrito y lo resuelve con cualquier método cuyas condiciones cumpla.
 - **Texto libre con IA local (opcional):** escribe el enunciado en palabras y Vertex arma el modelo por ti.
 - Botón **Limpiar** en el Editor y en Texto libre.
 - Validación de la sintaxis de las expresiones y de las restricciones.
 - Visualización de los tableros y pasos intermedios de cada algoritmo en un formato amigable, en el que se ve de dónde sale cada resultado (Cj, Cb, Xb, Sol, θ, Zj y Pj = Cj − Zj; holguras y excesos s1, s2... y artificiales A1, A2...), indicando en cada paso si la solución es factible y si ya es óptima.
 - Ayuda teórica por algoritmo: cada ventana de resultados tiene un botón **(?)** que explica cómo funciona el método (fundamento, pasos y un ejemplo resuelto), además de recordar el significado de los colores usados en esa ventana.
 - Ayuda de formulación: el botón **(?)** de la barra de título de la ventana principal explica cómo plantear un problema (variables, función objetivo, restricciones y no negatividad), su modelo matemático y matricial, y cómo escribirlo en Vertex.
-- Análisis de sensibilidad (Simplex y Simplex Revisado): precios sombra, holguras, costos reducidos y rangos de los coeficientes y de los lados derechos.
+- Análisis de sensibilidad (Simplex, Simplex Revisado y Simplex Dual): precios sombra, holguras, costos reducidos y rangos de los coeficientes y de los lados derechos.
 - Modo oscuro, con el interruptor ☀️ | 🌙 de la barra de título de la ventana principal; Vertex recuerda tu elección.
 - Gráfica de las restricciones, región factible y solución óptima cuando el problema tiene dos variables, con todos los puntos de intersección factibles marcados y un cuadro flotante con sus valores al pasar el mouse sobre ellos.
 - Formato visual de subíndices para variables como `x1`, `x2` o `x11`.
@@ -169,6 +172,25 @@ Los coeficientes pueden ser enteros, decimales, positivos o negativos. El coefic
 
 Puedes usar tantas variables como necesites y llamarlas como quieras, siempre con `x` + número: `x1` a `x12`, `x10` y `x20`, `x5` y `x7`... Vertex las usa tal cual y muestra los resultados con esos nombres.
 
+### Problema dual
+
+La **Z** de la función objetivo tiene dos índices que se cambian con un clic: el subíndice (**Max** ⇄ **Min**) y el superíndice (**P** ⇄ **D**, primal o dual).
+
+Al pasar de **P** a **D** con un problema escrito, Vertex arma su dual:
+
+1. Normaliza: en un Max todas las restricciones deben ser `<=` y en un Min todas `>=`; la que no cumple se multiplica por −1. Cada `=` se rompe en una `<=` y una `>=`.
+2. Cada restricción da una variable dual `y1, y2...` (su precio sombra) y cada variable `x` da una restricción del dual; la matriz se transpone y los lados derechos pasan a ser los coeficientes de Z.
+3. Equivalencia: Z<sub>p</sub>Max → Z<sub>d</sub>Min y Z<sub>p</sub>Min → Z<sub>d</sub>Max.
+
+```text
+Primal (P):  Max  3x1 + 5x2          Dual (D):  Min  4y1 + 12y2 + 18y3
+             x1 <= 4                            y1 + 3y3 >= 3
+             2x2 <= 12                          2y2 + 2y3 >= 5
+             3x1 + 2x2 <= 18
+```
+
+En modo **D** las variables se escriben con `y`. Al volver a **P**, si el dual salió de tu primal y no lo editaste, regresa tu primal tal cual; si lo editaste o lo escribiste directamente en D, se calcula el dual del dual. Húngaro y Costos Duales no se ofrecen en modo D: el dual de una asignación o un transporte ya no es otro problema de ese tipo.
+
 ### Problemas generales con doble índice
 
 Si el problema tiene dos dimensiones naturales (producto *i* en planta *j*, crudo *i* en gasolina *j*...), también puedes escribirlo con variables `xij`: `x11`, `x12`, `x23`... Simplex, Big M, Simplex Dual, Gráfico y Numérico lo resuelven igual que con `x1, x2...`, y los resultados se muestran con tus nombres originales (`x23 = 10`). No hace falta usar todas las combinaciones: si no existe `x13`, simplemente no la escribas.
@@ -229,7 +251,7 @@ Para usar otro modelo o servidor, cambia las preferencias `iaModelo` e `iaUrl` (
 
 - El método gráfico trabaja únicamente con dos variables.
 - El método numérico enumera combinaciones de variables básicas y limita el sistema estándar a 18 variables para evitar un crecimiento combinatorio excesivo.
-- El método Simplex Dual admite restricciones `<=` y `>=` (las `>=` se multiplican por −1) y está pensado para minimizar con costos positivos; para restricciones `=`, use Big M.
+- El método Simplex Dual admite restricciones `<=` y `>=` (las `>=` se multiplican por −1) y está pensado para minimizar con costos positivos; para restricciones `=`, use Big M. Es el método dual de Lemke (1954): pivotea el mismo problema, no arma su dual.
 - Los archivos `SimplexExamples.txt` contienen casos de entrada de referencia.
 
 ## Estructura del proyecto
@@ -241,6 +263,7 @@ src/
 │   │   ├── com/mycompany/problema/programacion/lineal/
 │   │   │   ├── algoritmos/
 │   │   │   │   ├── AnalisisSensibilidad.java
+│   │   │   │   ├── Dualizador.java
 │   │   │   │   ├── FormatoNumero.java
 │   │   │   │   ├── Matrices.java
 │   │   │   │   ├── Json_History.java
@@ -279,6 +302,8 @@ src/
 │   │   │   ├── MultiCalculos.java
 │   │   │   ├── SeleccionMultiAlgoritmo.java
 │   │   │   ├── PrincipalPage.java
+│   │   │   ├── SelectorTipoZ.java
+│   │   │   ├── Dualidad.java
 │   │   │   ├── PantallaTextoLibre.java
 │   │   │   ├── ProblemaProgramacionLineal.java
 │   │   │   ├── MenuHistorial.java

@@ -40,6 +40,11 @@ public class PrincipalPage extends javax.swing.JFrame {
     private javax.swing.JPanel avisoIA;
     private javax.swing.JLabel textoAvisoIA;
 
+    // Dualidad (2.2.0.1): Z con superíndice P/D y subíndice Max/Min
+    private SelectorTipoZ selectorZ;
+    /** El primal que se dualizó, para volver a él tal cual (null si no hay o el dual se editó y se recalculó). */
+    private InstantaneaPrimal instantanea;
+
     private static final String PREF_X = "ventanaX";
     private static final String PREF_Y = "ventanaY";
     private static final String PREF_W = "ventanaAncho";
@@ -57,6 +62,7 @@ public class PrincipalPage extends javax.swing.JFrame {
         System.arraycopy(SeleccionMultiAlgoritmo.NOMBRES, 0, metodos, 1, SeleccionMultiAlgoritmo.NOMBRES.length);
         AlgoritmoBox.setModel(new javax.swing.DefaultComboBoxModel<>(metodos));
         Recursos.aplicarIcono(this);
+        Dualidad.setDual(false); // cada ventana principal nueva arranca en el primal (alternarTema restaura el modo)
         ObjetiveFunction.setSoloUnaLinea(true);
         ObjetiveFunction.setBackground(Tema.campo());
         jScrollPane3.getViewport().setBackground(Tema.campo());
@@ -107,8 +113,9 @@ public class PrincipalPage extends javax.swing.JFrame {
         javax.swing.JPanel objetivo = crearTarjeta();
         javax.swing.JPanel objetivoFila = new javax.swing.JPanel(new java.awt.GridBagLayout());
         objetivoFila.setOpaque(false);
-        agregar(objetivoFila, jLabel1, 0, 0, 0, 0);
-        agregar(objetivoFila, ZType, 1, 0, 0, 0);
+        // "Z" + P/D + Max/Min en vez de la etiqueta y el combo: ZType queda como modelo oculto
+        selectorZ = new SelectorTipoZ(ZType, this::alternarPrimalDual);
+        agregar(objetivoFila, selectorZ, 0, 0, 0, 0);
         agregar(objetivoFila, jLabel4, 2, 0, 0, 0);
         agregar(objetivoFila, jScrollPane3, 3, 0, 1, 1);
         objetivo.add(objetivoFila, java.awt.BorderLayout.CENTER);
@@ -191,6 +198,194 @@ public class PrincipalPage extends javax.swing.JFrame {
         }
     }
 
+    // ======================================================================
+    // DUALIDAD: superíndice P ⇄ D de Z
+    // ======================================================================
+
+    /** Lo que había en el Editor antes de pasar al dual, y el dual que se escribió en su lugar. */
+    private static final class InstantaneaPrimal {
+
+        final String fo;
+        final String r;
+        final String tipo;
+        final String foDual;
+        final String rDual;
+        final String tipoDual;
+
+        InstantaneaPrimal(String fo, String r, String tipo, String foDual, String rDual, String tipoDual) {
+            this.fo = fo;
+            this.r = r;
+            this.tipo = tipo;
+            this.foDual = foDual;
+            this.rDual = rDual;
+            this.tipoDual = tipoDual;
+        }
+
+        /** true si el dual sigue tal cual se generó (ni el texto ni Max/Min se tocaron). */
+        boolean sigueIgual(String fo, String r, String tipo) {
+            return foDual.equals(fo.trim()) && rDual.equals(r.trim()) && tipoDual.equals(tipo);
+        }
+    }
+
+    /**
+     * Clic en el superíndice de Z. Con los campos vacíos solo cambia el modo
+     * (la letra con que se escribe). Con un problema escrito:
+     * <ul>
+     *   <li>P → D: arma el dual (ver {@link com.mycompany.problema.programacion.lineal.algoritmos.Dualizador})
+     *       y lo escribe en los campos, en y y con el tipo opuesto
+     *       (Z<sub>p</sub>Max → Z<sub>d</sub>Min, Z<sub>p</sub>Min → Z<sub>d</sub>Max).</li>
+     *   <li>D → P: si el dual no se editó, vuelve el primal tal como estaba;
+     *       si se editó (o se cambió Max/Min), calcula el dual del dual.</li>
+     * </ul>
+     */
+    private void alternarPrimalDual() {
+        boolean aDual = !Dualidad.esDual();
+        String fo = ObjetiveFunction.getText().trim();
+        String rTexto = Restrictions.getText().trim();
+        String tipo = String.valueOf(ZType.getSelectedItem());
+
+        // el aviso de un cambio anterior ya no corresponde: cada cambio deja solo el suyo (si tiene)
+        ocultarAvisoIA();
+
+        if (fo.isEmpty() && rTexto.isEmpty()) {
+            instantanea = null;
+            aplicarModo(aDual);
+            return;
+        }
+
+        if (!aDual && instantanea != null && instantanea.sigueIgual(fo, rTexto, tipo)) {
+            // vuelve lo que escribió el usuario, tal cual: no hace falta avisar nada
+            InstantaneaPrimal p = instantanea;
+            instantanea = null;
+            aplicarModo(false);
+            ObjetiveFunction.setText(p.fo);
+            Restrictions.setText(p.r);
+            ZType.setSelectedItem(p.tipo);
+            seleccionMulti.recalcularCompatibilidad();
+            return;
+        }
+
+        String[] r = lineasNoVacias(rTexto);
+        try {
+            verificarLetra(fo, r);
+            // mismas validaciones que Calcular, sobre copias (validateAndBuild modifica R)
+            String[] rx = new String[r.length];
+            for (int i = 0; i < r.length; i++) {
+                rx[i] = aX(r[i]);
+            }
+            validateAndBuild(aX(fo), rx);
+
+            com.mycompany.problema.programacion.lineal.algoritmos.Dualizador.Resultado d
+                    = com.mycompany.problema.programacion.lineal.algoritmos.Dualizador.dualizar(
+                            fo, r, tipo, Dualidad.letra(), aDual ? 'y' : 'x');
+            String rNuevo = String.join("\n", d.getR());
+            instantanea = aDual ? new InstantaneaPrimal(fo, rTexto, tipo, d.getFO(), rNuevo, d.getTipo()) : null;
+
+            aplicarModo(aDual);
+            ObjetiveFunction.setText(d.getFO());
+            Restrictions.setText(rNuevo);
+            ZType.setSelectedItem(d.getTipo());
+
+            // corto: la explicación del dual está en la ayuda (?) y el tooltip de la D dice cómo volver;
+            // las viñetas de abajo (qué se partió o se multiplicó por −1) son lo que vale la pena leer
+            StringBuilder html = new StringBuilder();
+            if (aDual) {
+                html.append("<b>Problema dual:</b> Z<sub>p</sub> ").append(tipo).append(" &rarr; Z<sub>d</sub> ")
+                        .append(d.getTipo());
+            } else {
+                // sin motivo: pasa tanto si se editó el dual como si se escribió directamente en D
+                html.append("<b>Dual del dual</b>");
+            }
+            for (String paso : d.getPasos()) {
+                html.append("<br>• ").append(escaparHtml(paso));
+            }
+            mostrarAvisoIA(html.toString(), false);
+            seleccionMulti.recalcularCompatibilidad();
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this,
+                    (aDual ? "No se pudo pasar al problema dual:\n" : "No se pudo volver al problema primal:\n")
+                    + mensajeConLetra(ex.getMessage()),
+                    "Dualidad", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /** Cambia el modo P/D en toda la ventana: estado global, superíndice, letra de los campos y selector. */
+    private void aplicarModo(boolean dual) {
+        Dualidad.setDual(dual);
+        selectorZ.setModoDual(dual);
+        ObjetiveFunction.setLetraVariable(Dualidad.letra());
+        Restrictions.setLetraVariable(Dualidad.letra());
+        seleccionMulti.recalcularCompatibilidad();
+    }
+
+    /** Las líneas con texto de las restricciones. */
+    private static String[] lineasNoVacias(String texto) {
+        List<String> lineas = new ArrayList<>();
+        for (String linea : texto.split("\\r?\\n")) {
+            if (!linea.trim().isEmpty()) {
+                lineas.add(linea);
+            }
+        }
+        return lineas.toArray(new String[0]);
+    }
+
+    /**
+     * Los algoritmos y los parsers leen x1, x2...: en el dual, el texto
+     * del usuario (y1, y2...) se traduce antes de usarlo. En el primal
+     * devuelve el mismo texto.
+     */
+    private static String aX(String texto) {
+        return com.mycompany.problema.programacion.lineal.algoritmos.Dualizador.aLetraX(texto, Dualidad.letra());
+    }
+
+    /** Lo contrario de {@link #aX}: vuelve a escribir en y lo que se tradujo (para el historial). */
+    private static String deX(String texto) {
+        if (texto == null || !Dualidad.esDual()) {
+            return texto;
+        }
+        return texto.replaceAll("[xX](\\d+)", "y$1");
+    }
+
+    private static String[] deX(String[] textos) {
+        if (textos == null || !Dualidad.esDual()) {
+            return textos;
+        }
+        String[] r = new String[textos.length];
+        for (int i = 0; i < textos.length; i++) {
+            r[i] = deX(textos[i]);
+        }
+        return r;
+    }
+
+    /** La letra que se puede escribir en Z y en las restricciones: x en el primal, y en el dual. */
+    private static boolean esLetraVariable(char c) {
+        return Character.toLowerCase(c) == Dualidad.letra();
+    }
+
+    /** Los mensajes de error de los parsers hablan de x: en el dual se muestran con y. */
+    private static String mensajeConLetra(String mensaje) {
+        if (mensaje == null || !Dualidad.esDual()) {
+            return mensaje;
+        }
+        return mensaje.replaceAll("(?<![A-Za-z])x(\\d+)", "y$1").replace("(x1, x2, ...)", "(y1, y2, ...)")
+                .replace("xij", "yij");
+    }
+
+    /** Texto pegado con la otra letra (x en el dual, y en el primal): se avisa en vez de leerlo mal. */
+    private static void verificarLetra(String fo, String[] r) {
+        char otra = Dualidad.esDual() ? 'x' : 'y';
+        Pattern p = Pattern.compile("[" + otra + Character.toUpperCase(otra) + "]\\d");
+        boolean hay = p.matcher(fo).find();
+        for (String linea : r) {
+            hay |= p.matcher(linea).find();
+        }
+        if (hay) {
+            throw new IllegalArgumentException(Dualidad.esDual()
+                    ? "En el problema dual las variables se escriben con y (y1, y2, ...)."
+                    : "En el problema primal las variables se escriben con x (x1, x2, ...).");
+        }
+    }
+
     /** Botón "Limpiar" del Editor: deja Z, restricciones, tipo y algoritmo como al abrir la app. */
     private void limpiarEditor() {
         boolean hayTexto = !ObjetiveFunction.getText().trim().isEmpty()
@@ -208,6 +403,8 @@ public class PrincipalPage extends javax.swing.JFrame {
         ObjetiveFunction.setText("");
         Restrictions.setText("");
         ZType.setSelectedIndex(0);
+        instantanea = null;
+        aplicarModo(false);
         seleccionMulti.seleccionarUno(null); // vuelve a "Decide por mi"
         ocultarAvisoIA();
         ObjetiveFunction.requestFocusInWindow();
@@ -314,8 +511,11 @@ public class PrincipalPage extends javax.swing.JFrame {
         ayuda.setForeground(Tema.tinta());
         ayuda.setToolTipText("Cómo formular un problema y escribirlo en Vertex");
         ayuda.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
-        ayuda.addActionListener(e -> new VentanaAyudaAlgoritmo(this, "Formulación de un problema", null,
-                VentanaAyudaAlgoritmo.TEORIA_FORMULACION).setVisible(true));
+        // se lee el modo al hacer clic: con D muestra cómo se formula y se lee el problema dual
+        ayuda.addActionListener(e -> new VentanaAyudaAlgoritmo(this,
+                Dualidad.esDual() ? "Formulación del problema dual" : "Formulación de un problema", null,
+                Dualidad.teoria(VentanaAyudaAlgoritmo.TEORIA_FORMULACION, VentanaAyudaAlgoritmo.TEORIA_FORMULACION_DUAL))
+                .setVisible(true));
 
         javax.swing.JMenuBar barra = new javax.swing.JMenuBar();
         barra.add(titulo);
@@ -405,6 +605,10 @@ public class PrincipalPage extends javax.swing.JFrame {
                 .put("Tipo", String.valueOf(ZType.getSelectedItem()))
                 .put("R", Arrays.asList(Restrictions.getText().split("\\r?\\n", -1)))
                 .put("Metodos", seleccionMulti.getSeleccionados());
+        if (Dualidad.esDual()) {
+            estado.put("Modo", com.mycompany.problema.programacion.lineal.algoritmos.Json_History.MODO_DUAL);
+        }
+        InstantaneaPrimal primalGuardado = instantanea;
         String enunciado = pantallaTextoLibre.getEnunciado();
         boolean enTextoLibre = tabTexto.isSelected();
         java.awt.Rectangle limites = getBounds();
@@ -417,7 +621,8 @@ public class PrincipalPage extends javax.swing.JFrame {
         PrincipalPage nueva = new PrincipalPage();
         nueva.setBounds(limites);
         nueva.setExtendedState(estadoVentana);
-        nueva.menuHistorial.inyectar(estado);
+        nueva.menuHistorial.inyectar(estado); // también restaura el modo P/D
+        nueva.instantanea = primalGuardado;   // inyectar la borra: se devuelve para poder volver al primal
         nueva.pantallaTextoLibre.setEnunciado(enunciado);
         nueva.setVisible(true);
         if (enTextoLibre) {
@@ -499,6 +704,11 @@ public class PrincipalPage extends javax.swing.JFrame {
     private void instalarMenuHistorial() {
         menuHistorial = new MenuHistorial(historial, ObjetiveFunction, ZType, Restrictions, seleccionMulti);
         menuHistorial.instalarEn(this, getLayeredPane(), getWidth(), getHeight());
+        // un problema del historial (o de la IA) trae su propio modo: no se dualiza, ya viene escrito
+        menuHistorial.setAlCambiarModo(dual -> {
+            instantanea = null;
+            aplicarModo(dual);
+        });
         menuHistorial.setAlInyectar(() -> {
             if (!tabEditor.isSelected()) {
                 mostrarPantalla(CARTA_EDITOR);
@@ -542,6 +752,10 @@ public class PrincipalPage extends javax.swing.JFrame {
         PerfilProblema p = perfilProblema();
         if (p.variables == 0) {
             return null; // todavía no hay nada escrito que evaluar
+        }
+        if (Dualidad.esDual() && usaMatrizXij(nombreAlgoritmo)) {
+            // el dual de una asignación/transporte no es otra: sus y son los uᵢ, vⱼ (ver la teoría dual)
+            return "En el problema dual las y no son rutas origen-destino: usa Simplex, Big M o Simplex Dual";
         }
         switch (nombreAlgoritmo) {
             case "Grafico":
@@ -600,7 +814,7 @@ public class PrincipalPage extends javax.swing.JFrame {
 
     private PerfilProblema perfilProblema() {
         PerfilProblema p = new PerfilProblema();
-        String fo = ObjetiveFunction.getText().replaceAll("\\s+", "");
+        String fo = aX(ObjetiveFunction.getText()).replaceAll("\\s+", ""); // en el dual, y → x
         String[] restricciones = restriccionesValidas();
 
         Set<String> variables = new HashSet<>();
@@ -677,7 +891,7 @@ public class PrincipalPage extends javax.swing.JFrame {
             }
             try {
                 parseRestriction(linea);
-                validas.add(linea);
+                validas.add(aX(linea));
             } catch (IllegalArgumentException ex) {
                 // incompleta: no cuenta todavía
             }
@@ -969,14 +1183,35 @@ public class PrincipalPage extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, "Llena todos los campos.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        setFO(ObjetiveFunction.getText());
-        setR(Restrictions.getText().split("\\r?\\n"));
-        String FO = getFO();
-        String[] R = getR();
         String tipo = ZType.getSelectedItem().toString();
 
         try {
+            // En el dual el usuario escribe y1, y2...: los algoritmos reciben x1, x2... y
+            // las ventanas vuelven a mostrar y (planoPara). El historial guarda lo escrito.
+            String[] lineas = Restrictions.getText().split("\\r?\\n");
+            verificarLetra(ObjetiveFunction.getText(), lineas);
+            for (int i = 0; i < lineas.length; i++) {
+                lineas[i] = aX(lineas[i]);
+            }
+            setFO(aX(ObjetiveFunction.getText()));
+            setR(lineas);
+            String FO = getFO();
+            String[] R = getR();
+            String modo = Dualidad.esDual()
+                    ? com.mycompany.problema.programacion.lineal.algoritmos.Json_History.MODO_DUAL
+                    : com.mycompany.problema.programacion.lineal.algoritmos.Json_History.MODO_PRIMAL;
+
             String[][] RMat = PrincipalPage.validateAndBuild(FO, R);
+            if (Dualidad.esDual()) {
+                List<String> pedidos = seleccionMulti.isModoMultiActivo() ? seleccionMulti.getSeleccionados()
+                        : Collections.singletonList(String.valueOf(AlgoritmoBox.getSelectedItem()));
+                for (String nombre : pedidos) {
+                    if (usaMatrizXij(nombre)) {
+                        throw new IllegalArgumentException(nombre + " no aplica al problema dual: "
+                                + motivoIncompatible(nombre, pedidos).toLowerCase() + ".");
+                    }
+                }
+            }
 
             System.out.println("Matriz de restricciones:");
             for (String[] fila : RMat) {
@@ -1004,7 +1239,7 @@ public class PrincipalPage extends javax.swing.JFrame {
                     resueltos.add(instancia);
                 }
                 new MultiCalculos(resueltos, elegidos).setVisible(true);
-                historial.guardarCalculo(FO, R, tipo, elegidos.toArray(new String[0]));
+                historial.guardarCalculo(deX(FO), deX(R), tipo, elegidos.toArray(new String[0]), modo);
                 return;
             }
 
@@ -1022,12 +1257,13 @@ public class PrincipalPage extends javax.swing.JFrame {
                     metodo = 0;
                     // 1. Algoritmo Húngaro → problema de asignación
                     // Condición: todas las restricciones del tipo ∑ xij = 1 (filas/columnas balanceadas, valores binarios)
-                    if (checkHungaro(R, FO, metodo)) {
+                    // (en el dual no: sus y no son rutas origen-destino)
+                    if (!Dualidad.esDual() && checkHungaro(R, FO, metodo)) {
                         resolverYMostrar(new AlgoritmoHungaro(), FO, R, tipo, "Hungaro");
 
                         // 2. Algoritmo de Costos Duales → transporte/distribución
                         // Condición: problema de transporte con oferta = demanda total
-                    } else if (checkCostosDuales(R, FO, metodo)) {
+                    } else if (!Dualidad.esDual() && checkCostosDuales(R, FO, metodo)) {
                         resolverYMostrar(new AlgoritmoCostosDuales(), FO, R, tipo, "Costos Dual");
 
                     } else {
@@ -1112,11 +1348,11 @@ public class PrincipalPage extends javax.swing.JFrame {
 
             // Se resolvió algo de verdad (no se canceló un fallback) -> guardar/actualizar historial
             if (ultimoMetodoResuelto != null) {
-                historial.guardarCalculo(FO, R, tipo, new String[]{ultimoMetodoResuelto});
+                historial.guardarCalculo(deX(FO), deX(R), tipo, new String[]{ultimoMetodoResuelto}, modo);
             }
 
         } catch (IllegalArgumentException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, mensajeConLetra(ex.getMessage()), "Error", JOptionPane.ERROR_MESSAGE);
         }
 
     }//GEN-LAST:event_CalcButtonMouseClicked
@@ -1179,10 +1415,11 @@ public class PrincipalPage extends javax.swing.JFrame {
      */
     private ProblemaPlano planoPara(String FO, String[] R) {
         MapeoVariables.Traduccion t = MapeoVariables.compactar(FO, R);
+        // en el dual los algoritmos reciben x, pero cada ventana muestra y1, y2...
         if (t.getMapeo().esIdentidad()) {
-            return new ProblemaPlano(FO, R, MapeoVariables.identidad());
+            return new ProblemaPlano(FO, R, MapeoVariables.identidad().conLetra(Dualidad.letra()));
         }
-        return new ProblemaPlano(t.getFOPlano(), t.getRPlano(), t.getMapeo());
+        return new ProblemaPlano(t.getFOPlano(), t.getRPlano(), t.getMapeo().conLetra(Dualidad.letra()));
     }
 
     /** Húngaro y Costos Duales leen xij como matriz origen/destino: reciben el problema sin traducir. */
@@ -1198,7 +1435,7 @@ public class PrincipalPage extends javax.swing.JFrame {
             return;
         }
 
-        if (!(cc.equals("X") || cc.equals("x") || Character.isDigit(c) || cc.equals("+") || cc.equals("-") || cc.equals("<") || cc.equals(">") || cc.equals("=") || cc.equals(".") || cc.equals("/"))) {
+        if (!(esLetraVariable(c) || Character.isDigit(c) || cc.equals("+") || cc.equals("-") || cc.equals("<") || cc.equals(">") || cc.equals("=") || cc.equals(".") || cc.equals("/"))) {
             evt.consume(); // cancela la tecla
             java.awt.Toolkit.getDefaultToolkit().beep(); // sonido error
         }
@@ -1213,7 +1450,7 @@ public class PrincipalPage extends javax.swing.JFrame {
             return;
         }
 
-        if (!(cc.equals("X") || cc.equals("x") || Character.isDigit(c) || cc.equals("+") || cc.equals("-") || cc.equals(".") || cc.equals("/"))) {
+        if (!(esLetraVariable(c) || Character.isDigit(c) || cc.equals("+") || cc.equals("-") || cc.equals(".") || cc.equals("/"))) {
             evt.consume();
             java.awt.Toolkit.getDefaultToolkit().beep();
         }

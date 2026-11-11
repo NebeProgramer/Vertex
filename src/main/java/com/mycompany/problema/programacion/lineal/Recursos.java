@@ -127,6 +127,37 @@ public final class Recursos {
         }
     }
 
+    /** Símbolos que usan los textos "Factible / Óptimo" de los tableros. */
+    private static final String SIMBOLOS = "∃≤≥";
+
+    /**
+     * La misma fuente (misma familia, estilo y tamaño), pero con respaldo
+     * para los caracteres que no trae: Consolas y Segoe UI no tienen el ∃
+     * de {@link #motivoNoOptimo} y Swing lo dibujaría como un cuadro.
+     * StyleContext arma una fuente compuesta que sigue siendo Consolas (o
+     * Segoe UI) y toma solo los glifos que faltan de otra fuente del sistema.
+     * deriveFont le quita el UIResource, para que FlatLaf no la reemplace al
+     * cambiar entre tema claro y oscuro.
+     */
+    public static java.awt.Font fuenteConSimbolos(java.awt.Font base) {
+        if (base.canDisplayUpTo(SIMBOLOS) == -1) {
+            return base;
+        }
+        java.awt.Font compuesta = javax.swing.text.StyleContext.getDefaultStyleContext()
+                .getFont(base.getFamily(), base.getStyle(), base.getSize());
+        return compuesta.canDisplayUpTo(SIMBOLOS) == -1
+                ? compuesta.deriveFont(base.getStyle(), base.getSize2D()) : base;
+    }
+
+    /**
+     * Por qué un tablero todavía no es óptimo, con el criterio de los
+     * P<sub>j</sub> = C<sub>j</sub> − Z<sub>j</sub>: en Zmax queda alguno
+     * &gt; 0, en Zmin alguno &lt; 0.
+     */
+    public static String motivoNoOptimo(boolean esMin) {
+        return "No — ∃ Pj " + (esMin ? "< 0" : "> 0");
+    }
+
     /**
      * Instala en la ventana una JMenuBar vacía con un único botón "(?)"
      * pegado a la derecha (junto a minimizar/cerrar, gracias a las
@@ -259,7 +290,8 @@ public final class Recursos {
                 ((javax.swing.JScrollPane) c).getViewport().setBackground(Tema.campo());
             } else if (c instanceof javax.swing.JTextArea) {
                 javax.swing.JTextArea ta = (javax.swing.JTextArea) c;
-                ta.setFont(new java.awt.Font("Consolas", java.awt.Font.PLAIN, 13));
+                // con respaldo para el ∃ de los textos "Factible / Óptimo"
+                ta.setFont(fuenteConSimbolos(new java.awt.Font("Consolas", java.awt.Font.PLAIN, 13)));
                 ta.setBackground(Tema.campo());
                 ta.setForeground(Tema.tinta());
             }

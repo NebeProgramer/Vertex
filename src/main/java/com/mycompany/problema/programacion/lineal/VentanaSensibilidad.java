@@ -26,8 +26,8 @@ import javax.swing.table.DefaultTableModel;
 /**
  * Tablas del análisis de sensibilidad de la solución óptima (variables y
  * restricciones), con el mismo estilo que la ayuda teórica. Se abre desde
- * el botón "Sensibilidad" de la barra de título del Simplex y del Simplex
- * Revisado.
+ * el botón "Sensibilidad" de la barra de título del Simplex, del Simplex
+ * Revisado y del Simplex Dual.
  */
 public class VentanaSensibilidad extends JDialog {
 
@@ -80,8 +80,9 @@ public class VentanaSensibilidad extends JDialog {
         ayuda.setForeground(Tema.tinta());
         ayuda.setToolTipText("Qué significa cada columna y cómo se calcula");
         ayuda.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
-        ayuda.addActionListener(e -> new VentanaAyudaAlgoritmo(this, "Análisis de sensibilidad", null,
-                VentanaAyudaAlgoritmo.TEORIA_SENSIBILIDAD).setVisible(true));
+        // la teoría se elige al abrir esta ventana (primal o dual), no al hacer clic
+        String teoria = Dualidad.teoria(VentanaAyudaAlgoritmo.TEORIA_SENSIBILIDAD, VentanaAyudaAlgoritmo.TEORIA_SENSIBILIDAD_DUAL);
+        ayuda.addActionListener(e -> new VentanaAyudaAlgoritmo(this, "Análisis de sensibilidad", null, teoria).setVisible(true));
         javax.swing.JMenuBar barra = new javax.swing.JMenuBar();
         barra.add(javax.swing.Box.createHorizontalGlue());
         barra.add(ayuda);

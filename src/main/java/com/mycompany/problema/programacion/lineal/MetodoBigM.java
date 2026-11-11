@@ -74,7 +74,7 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
         VentanaPrefs.aplicar(this);
         Recursos.instalarAyudaEnBarraTitulo(this, "Big M",
                 "<html><b>Colorimetría — Big M</b><br>&#128992; Naranja: celda pivote<br>&#128993; Amarillo: fila y columna del pivote<br>&#128994; Verde: números afectados por el cambio de variable</html>",
-                VentanaAyudaAlgoritmo.TEORIA_BIGM);
+                Dualidad.teoria(VentanaAyudaAlgoritmo.TEORIA_BIGM, VentanaAyudaAlgoritmo.TEORIA_BIGM_DUAL));
         Recursos.envolverEnFondoAzul(this);
         Recursos.modernizarVentana(this);
         // el texto del paso puede ser largo: que se recorte (completo en el tooltip) antes que empujar los botones
@@ -626,11 +626,12 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
         // la fila Z interna es de maximización: en Min se cambia el signo de las dos partes
         double signo = esMin ? -1 : 1;
         sb.append("Z = ").append(fmtM(signo * zc[totalCols - 1], signo * zm[totalCols - 1])).append("\n");
-        sb.append("Factible: ").append(factiblePaso ? "Sí" : "No").append("\n");
+        // el porqué, con el criterio de la teoría: factible si ninguna artificial sigue > 0
+        sb.append("Factible: ").append(factiblePaso ? "Sí" : "No — ∃ Ai > 0").append("\n");
         if (esUltimaTabla && !factible) {
             sb.append("Óptimo: No — el problema no tiene solución factible");
         } else {
-            sb.append("Óptimo: ").append(esOptimo ? "Sí" : "No, aún se puede mejorar");
+            sb.append("Óptimo: ").append(esOptimo ? "Sí" : Recursos.motivoNoOptimo(esMin));
         }
         return sb.toString();
     }

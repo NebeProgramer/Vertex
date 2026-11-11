@@ -75,7 +75,7 @@ public class AlgoritmoCostosDuales extends javax.swing.JFrame implements MetodoP
         VentanaPrefs.aplicar(this);
         Recursos.instalarAyudaEnBarraTitulo(this, "Costos Duales (MODI)",
                 "<html><b>Colorimetría — Costos Duales (transporte)</b><br>&#128994; Verde: celda que cambió / suma &theta;<br>&#128992; Naranja: celda que entra a la base<br>&#128992;&#65039; Rojo: celda que resta &theta;</html>",
-                VentanaAyudaAlgoritmo.TEORIA_COSTOS_DUALES);
+                Dualidad.teoria(VentanaAyudaAlgoritmo.TEORIA_COSTOS_DUALES, VentanaAyudaAlgoritmo.TEORIA_COSTOS_DUALES_DUAL));
         Recursos.envolverEnFondoAzul(this);
         Recursos.modernizarVentana(this);
         instalarRendererColores(TablaTransporte);
@@ -897,7 +897,8 @@ public class AlgoritmoCostosDuales extends javax.swing.JFrame implements MetodoP
         if (esUltimaTabla && !factible) {
             sb.append("Óptimo: No — no se pudo completar el método (base degenerada sin ciclo válido)");
         } else {
-            sb.append("Óptimo: ").append(esOptimo ? "Sí" : "No, aún se puede mejorar");
+            // MODI: óptimo cuando ningún costo de oportunidad cᵢⱼ − uᵢ − vⱼ es negativo
+            sb.append("Óptimo: ").append(esOptimo ? "Sí" : "No — ∃ costo de oportunidad < 0");
         }
         return sb.toString();
     }

@@ -49,7 +49,7 @@ public class MetodoGrafico extends javax.swing.JFrame implements MetodoPL {
         VentanaPrefs.aplicar(this);
         Recursos.instalarAyudaEnBarraTitulo(this, "Método Gráfico",
                 "<html><b>Colorimetría — Gráfico</b><br>&#127811; Verde lima: vértice factible, no óptimo<br>&#127795; Verde bosque: vértice óptimo<br>&#128309; Azul: región factible</html>",
-                VentanaAyudaAlgoritmo.TEORIA_GRAFICO);
+                Dualidad.teoria(VentanaAyudaAlgoritmo.TEORIA_GRAFICO, VentanaAyudaAlgoritmo.TEORIA_GRAFICO_DUAL));
         Recursos.envolverEnFondoAzul(this);
         Recursos.modernizarVentana(this);
         grafico.setBorder(javax.swing.BorderFactory.createLineBorder(Tema.borde())); // el de initComponents es negro fijo
@@ -144,7 +144,7 @@ public class MetodoGrafico extends javax.swing.JFrame implements MetodoPL {
 
         if (Z.length != 2) {
             grafico.limpiar();
-            txtResultado.setText("El método gráfico solo aplica a problemas con 2 variables (x1, x2).");
+            txtResultado.setText("El método gráfico solo aplica a problemas con 2 variables (" + mapeo.nombreDe(1) + ", " + mapeo.nombreDe(2) + ")."); // x1, x2 (y1, y2 en el dual)
             return;
         }
 

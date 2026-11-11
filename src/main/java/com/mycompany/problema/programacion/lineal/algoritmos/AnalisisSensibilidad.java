@@ -167,6 +167,42 @@ public final class AnalisisSensibilidad {
         return new AnalisisSensibilidad(s, limpiar(esMin ? -zInterno : zInterno));
     }
 
+    /**
+     * Igual que {@link #calcular}, para un problema en el que algunas
+     * restricciones se multiplicaron por −1 antes de resolverlo (el Simplex
+     * Dual escribe cada a·x &gt;= b como −a·x &lt;= −b). A y b son los de
+     * esa forma interna, todo &lt;=; los resultados de las restricciones se
+     * devuelven como las escribió el usuario:
+     * <ul>
+     *   <li>lado derecho: b (no −b);</li>
+     *   <li>precio sombra: cambio de Z por unidad más de b, que es el
+     *       opuesto del de −b;</li>
+     *   <li>holgura: la de −a·x &lt;= −b es a·x − b, el exceso de la &gt;=,
+     *       así que no cambia;</li>
+     *   <li>aumento y disminución permisibles: subir b es bajar −b, así que
+     *       se intercambian.</li>
+     * </ul>
+     * Las variables de decisión no cambian: multiplicar una fila por −1 no
+     * mueve la solución ni los costos reducidos.
+     *
+     * @param negada negada[i] = true si la fila i se multiplicó por −1
+     */
+    public static AnalisisSensibilidad calcular(double[] c, double[][] A, double[] b, boolean esMin, int[] baseFinal,
+            boolean[] negada) {
+        AnalisisSensibilidad s = calcular(c, A, b, esMin, baseFinal);
+        for (int i = 0; i < s.ladoDerecho.length; i++) {
+            if (negada == null || !negada[i]) {
+                continue;
+            }
+            s.ladoDerecho[i] = limpiar(-s.ladoDerecho[i]);
+            s.precioSombra[i] = limpiar(-s.precioSombra[i]);
+            double aumento = s.aumentoLadoDerecho[i];
+            s.aumentoLadoDerecho[i] = s.disminucionLadoDerecho[i];
+            s.disminucionLadoDerecho[i] = aumento;
+        }
+        return s;
+    }
+
     /** Quita el "-0" y el ruido de punto flotante (1e-13) para mostrar los números limpios. */
     private static double limpiar(double v) {
         if (Double.isInfinite(v)) {

@@ -78,7 +78,9 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
         VentanaPrefs.aplicar(this);
         Recursos.instalarAyudaEnBarraTitulo(this, "Simplex Dual",
                 "<html><b>Colorimetría — Simplex Dual</b><br>&#128992; Naranja: celda pivote<br>&#128993; Amarillo: fila y columna del pivote<br>&#128994; Verde: números afectados por el cambio de variable</html>",
-                VentanaAyudaAlgoritmo.TEORIA_DUAL);
+                Dualidad.teoria(VentanaAyudaAlgoritmo.TEORIA_DUAL, VentanaAyudaAlgoritmo.TEORIA_DUAL_DUAL));
+        Recursos.agregarBotonBarraTitulo(this, "Sensibilidad",
+                "Precios sombra, holguras y rangos de la solución óptima", this::mostrarSensibilidad);
         Recursos.envolverEnFondoAzul(this);
         Recursos.modernizarVentana(this);
         // el texto del paso puede ser largo: que se recorte (completo en el tooltip) antes que empujar los botones
@@ -210,6 +212,7 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
         pivotColHistory.clear();
         pasoActual = 0;
         factible = true;
+        sensBase = null;
         esMin = tipo != null && tipo.trim().equalsIgnoreCase("Min");
 
         String foLimpia = FO.replaceAll("\\s+", "");
@@ -236,6 +239,7 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
         numSlack = m;
         double[][] A = new double[m][numVars];
         double[] b = new double[m];
+        boolean[] negada = new boolean[m]; // las >= que se multiplicaron por −1 (para la sensibilidad)
 
         for (int i = 0; i < m; i++) {
             String[] partes = PrincipalPage.parseRestriction(R[i]);
@@ -253,6 +257,7 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
             // negativo es justo lo que corrige el Simplex Dual (caso típico:
             // minimizar con costos positivos y restricciones >=)
             double signo = ">=".equals(op) ? -1.0 : 1.0;
+            negada[i] = ">=".equals(op);
 
             b[i] = signo * parseNum(rhs); // aquí SÍ puede ser negativo, a diferencia de Simplex normal
 
@@ -372,6 +377,16 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
         double zRow = T[m][totalCols - 1];
         zOptimo = esMin ? -zRow : zRow;
 
+        // datos para el análisis de sensibilidad: la base óptima de la forma interna (todo <=, con
+        // las >= multiplicadas por −1); solo si se llegó a una solución factible y óptima
+        if (factible) {
+            sensC = c;
+            sensA = A;
+            sensB = b;
+            sensNegada = negada;
+            sensBase = basis.clone();
+        }
+
         StringBuilder sb = new StringBuilder();
         if (!factible) {
             sb.append("El problema NO tiene solución factible (una fila con RHS negativo no tiene ninguna entrada negativa para corregirla).");
@@ -385,6 +400,38 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
         resultadoTexto = sb.toString();
 
         mostrarPaso(0);
+    }
+
+    // ---- análisis de sensibilidad ----
+    private double[] sensC;
+    private double[][] sensA;
+    private double[] sensB;
+    private boolean[] sensNegada;
+    private int[] sensBase;
+
+    /**
+     * Abre las tablas de sensibilidad de la solución óptima (botón de la
+     * barra de título), igual que en el Simplex. Las restricciones se
+     * muestran como las escribió el usuario: las &gt;= no salen con el signo
+     * cambiado (ver AnalisisSensibilidad.calcular con filas negadas).
+     */
+    private void mostrarSensibilidad() {
+        if (sensBase == null) {
+            javax.swing.JOptionPane.showMessageDialog(this, factible
+                    ? "Todavía no hay una solución óptima que analizar."
+                    : "El problema no tiene solución factible: no hay nada que analizar.",
+                    "Sensibilidad", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        com.mycompany.problema.programacion.lineal.algoritmos.AnalisisSensibilidad s
+                = com.mycompany.problema.programacion.lineal.algoritmos.AnalisisSensibilidad.calcular(
+                        sensC, sensA, sensB, esMin, sensBase, sensNegada);
+        String[] restricciones = new String[sensB.length];
+        for (int i = 0; i < restricciones.length; i++) {
+            restricciones[i] = "R" + (i + 1);
+        }
+        new VentanaSensibilidad(this, "Simplex Dual", s, java.util.Arrays.copyOf(varNames, numVars), restricciones)
+                .setVisible(true);
     }
 
     public double getZOptimo() {
@@ -542,11 +589,13 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
             sb.append(varNames[k]).append(" = ").append(fmt(sol[k])).append("\n");
         }
         sb.append("Z = ").append(fmt(zPaso)).append("\n");
-        sb.append("Factible: ").append(factiblePaso ? "Sí" : "No").append("\n");
+        // en el Simplex Dual los Pj son óptimos desde el inicio: lo que falta es la factibilidad
+        sb.append("Factible: ").append(factiblePaso ? "Sí" : "No — ∃ Sol < 0").append("\n");
         if (esUltimaTabla && !factible) {
             sb.append("Óptimo: No — el problema no tiene solución factible");
         } else {
-            sb.append("Óptimo: ").append(esOptimo ? "Sí" : "No, aún se puede mejorar");
+            sb.append("Óptimo: ").append(esOptimo ? "Sí"
+                    : "No — los Pj ya cumplen (" + (esMin ? "todos ≥ 0" : "todos ≤ 0") + "), pero ∃ Sol < 0");
         }
         return sb.toString();
     }

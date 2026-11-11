@@ -75,4 +75,34 @@ class AnalisisSensibilidadTest {
         assertArrayEquals(new double[]{3, 3}, s.aumentoCoeficiente, TOL);
         assertArrayEquals(new double[]{4.5, INF}, s.disminucionCoeficiente, TOL);
     }
+
+    /**
+     * Simplex Dual: el dual de Wyndor, Min 4y1 + 12y2 + 18y3 con y1 + 3y3 >= 3 y
+     * 2y2 + 2y3 >= 5, resuelto como lo guarda AlgoritmoDual (las >= multiplicadas
+     * por −1, base final y3, y2). Por dualidad, cada número es uno de Wyndor:
+     * los precios sombra son x* = (2, 6), los costos reducidos son las holguras
+     * del primal y los rangos de los coeficientes son los rangos de sus lados derechos.
+     */
+    @Test
+    void simplexDualConFilasNegadas() {
+        double[][] aInterna = {{-1, 0, -3}, {0, -2, -2}};
+        double[] bInterno = {-3, -5};
+        AnalisisSensibilidad s = AnalisisSensibilidad.calcular(new double[]{4, 12, 18}, aInterna, bInterno, true,
+                new int[]{2, 1}, new boolean[]{true, true});
+        assertEquals(36, s.z, TOL);
+        assertArrayEquals(new double[]{0, 1.5, 1}, s.valor, TOL);
+        assertArrayEquals(new double[]{2, 0, 0}, s.costoReducido, TOL);
+
+        // restricciones como las escribió el usuario (>=), no con el signo cambiado
+        assertArrayEquals(new double[]{3, 5}, s.ladoDerecho, TOL);
+        assertArrayEquals(new double[]{2, 6}, s.precioSombra, TOL); // = x1, x2 de Wyndor
+        assertArrayEquals(new double[]{0, 0}, s.holgura, TOL);
+        // = rangos de c1 ∈ [0, 7.5] y c2 ∈ [2, ∞) de Wyndor
+        assertArrayEquals(new double[]{4.5, INF}, s.aumentoLadoDerecho, TOL);
+        assertArrayEquals(new double[]{3, 3}, s.disminucionLadoDerecho, TOL);
+
+        // = rangos de b1 ∈ [2, ∞), b2 ∈ [6, 18] y b3 ∈ [12, 24] de Wyndor
+        assertArrayEquals(new double[]{INF, 6, 6}, s.aumentoCoeficiente, TOL);
+        assertArrayEquals(new double[]{2, 6, 6}, s.disminucionCoeficiente, TOL);
+    }
 }

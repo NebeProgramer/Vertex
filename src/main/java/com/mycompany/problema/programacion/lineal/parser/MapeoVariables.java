@@ -30,9 +30,16 @@ public final class MapeoVariables {
 
     /** Posición k-1 → token original del usuario ("x23"); vacío = identidad. */
     private final List<String> nombresOriginales;
+    /** Letra con que se muestran las variables: 'x' en el primal, 'y' en el dual. */
+    private final char letra;
 
     private MapeoVariables(List<String> nombresOriginales) {
+        this(nombresOriginales, 'x');
+    }
+
+    private MapeoVariables(List<String> nombresOriginales, char letra) {
         this.nombresOriginales = Collections.unmodifiableList(new ArrayList<>(nombresOriginales));
+        this.letra = letra;
     }
 
     /** Sin traducción: nombreDe(k) = "x" + k. Es el caso de los problemas escritos con x1..xn. */
@@ -43,9 +50,21 @@ public final class MapeoVariables {
     /** Nombre que ve el usuario para la variable plana xk (k desde 1). */
     public String nombreDe(int k) {
         if (k >= 1 && k <= nombresOriginales.size()) {
-            return nombresOriginales.get(k - 1);
+            return letra + nombresOriginales.get(k - 1).substring(1);
         }
-        return "x" + k;
+        return letra + "" + k;
+    }
+
+    /**
+     * El mismo mapeo, pero mostrando las variables con otra letra: en el
+     * problema dual el usuario escribe y1, y2... y los algoritmos reciben
+     * x1, x2... (ver PrincipalPage), así que las ventanas vuelven a mostrar
+     * "y". {@link #esIdentidad} no cambia: sigue diciendo si hubo traducción
+     * de índices.
+     */
+    public MapeoVariables conLetra(char letra) {
+        char l = Character.toLowerCase(letra);
+        return l == this.letra ? this : new MapeoVariables(nombresOriginales, l);
     }
 
     /** Cantidad de variables traducidas (0 en la identidad). */

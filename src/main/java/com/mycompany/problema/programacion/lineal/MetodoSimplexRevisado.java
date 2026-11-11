@@ -81,7 +81,7 @@ public class MetodoSimplexRevisado extends javax.swing.JFrame implements MetodoP
                 + "Bloques del tablero: B<sup>-1</sup>A (azul), B<sup>-1</sup> (naranja suave), B<sup>-1</sup>R (amarillo suave),"
                 + " Cb<sup>T</sup>B<sup>-1</sup>A (rojo suave), Cb<sup>T</sup>B<sup>-1</sup> (morado), Cb<sup>T</sup>B<sup>-1</sup>R (rosado),"
                 + " Pj (beige)</html>",
-                VentanaAyudaAlgoritmo.TEORIA_REVISADO);
+                Dualidad.teoria(VentanaAyudaAlgoritmo.TEORIA_REVISADO, VentanaAyudaAlgoritmo.TEORIA_REVISADO_DUAL));
         Recursos.agregarBotonBarraTitulo(this, "Sensibilidad",
                 "Precios sombra, holguras y rangos de la solución óptima", this::mostrarSensibilidad);
         Recursos.envolverEnFondoAzul(this);
@@ -468,7 +468,7 @@ public class MetodoSimplexRevisado extends javax.swing.JFrame implements MetodoP
         if (it.noAcotado) {
             sb.append("No acotado: Z puede mejorar sin límite");
         } else {
-            sb.append("Óptimo: ").append(it.optima ? "Sí" : "No, aún se puede mejorar");
+            sb.append("Óptimo: ").append(it.optima ? "Sí" : Recursos.motivoNoOptimo(esMin));
         }
         return sb.toString();
     }

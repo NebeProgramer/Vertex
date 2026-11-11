@@ -22,7 +22,7 @@ import org.json.JSONObject;
 /**
  * Cliente HTTP mínimo para Ollama (https://ollama.com), el motor de IA
  * gratuito que corre en la máquina del usuario. Solo usa el HttpClient de
- * Java 17 y org.json, así que no agrega dependencias al pom.
+ * Java 25 y org.json, así que no agrega dependencias al pom.
  *
  * La URL y el modelo se guardan en Preferences (mismo patrón que la
  * posición de la ventana principal), por si el usuario quiere cambiarlos.

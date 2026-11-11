@@ -13,7 +13,8 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 
 /**
- * JTextPane que detecta variables tipo "x11", "x2", etc. y dibuja el
+ * JTextPane que detecta variables tipo "x11", "x2" (o "y1", "y2" en el
+ * problema dual, ver {@link #setLetraVariable}), etc. y dibuja el
  * subíndice (los dígitos después de la x) en una fuente más pequeña y
  * desplazada hacia abajo, como notación matemática (x subíndice). En
  * cuanto aparece un caracter que no es dígito (+, -, *, <, =, espacio...)
@@ -95,7 +96,7 @@ public class SubIndiceTextPane extends JTextPane {
         for (int i = 0; i < texto.length(); i++) {
             char ch = texto.charAt(i);
 
-            if (!enSubindice && (ch == 'x' || ch == 'X')
+            if (!enSubindice && Character.toLowerCase(ch) == letraVariable
                     && i + 1 < texto.length() && Character.isDigit(texto.charAt(i + 1))) {
                 doc.setCharacterAttributes(i, 1, normal, true);
                 enSubindice = true;
@@ -124,6 +125,18 @@ public class SubIndiceTextPane extends JTextPane {
         // Asegura que lo próximo que se escriba salga en tamaño normal
         // (por si el cursor quedó justo después de un subíndice).
         setCharacterAttributes(normal, false);
+    }
+
+    /** Letra después de la cual los dígitos van como subíndice: 'x' (primal) o 'y' (dual). */
+    private char letraVariable = 'x';
+
+    /**
+     * Cambia la letra de las variables (x en el problema primal, y en el
+     * dual) y vuelve a dar formato al texto que ya está escrito.
+     */
+    public void setLetraVariable(char letra) {
+        this.letraVariable = Character.toLowerCase(letra);
+        programarFormato();
     }
 
     private boolean soloUnaLinea = false;
