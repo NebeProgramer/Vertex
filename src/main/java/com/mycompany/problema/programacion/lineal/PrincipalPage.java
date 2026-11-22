@@ -770,11 +770,8 @@ public class PrincipalPage extends javax.swing.JFrame {
                 return (p.hayMayorIgual || p.hayIgual)
                         ? null : "Requiere alguna restricción >= o = (si no, usa Simplex)";
             case "Simplex Dual":
-                if (p.hayIgual) {
-                    return "No admite restricciones = (usa Big M)";
-                }
-                return (p.hayMayorIgual || p.hayRhsNegativo)
-                        ? null : "Requiere restricciones >= o lado derecho negativo";
+                // las dos condiciones de la teoría sobre el tablero inicial: ∃ VR < 0 y Pj óptimos
+                return p.motivoSimplexDual;
             case "Numerico":
                 if (p.variablesNumerico > MAX_VARS_NUMERICO) {
                     return "Demasiado grande para el Numérico: " + p.variablesNumerico
@@ -810,6 +807,7 @@ public class PrincipalPage extends javax.swing.JFrame {
         boolean hayMayorIgual, hayIgual, hayRhsNegativo;
         String motivoXij;       // null si los nombres sirven como xij (origen, destino)
         boolean asignacion, transporte;
+        String motivoSimplexDual; // null si cumple las dos condiciones del Simplex Dual (∃ VR < 0 y Pj óptimos)
     }
 
     private PerfilProblema perfilProblema() {
@@ -823,6 +821,12 @@ public class PrincipalPage extends javax.swing.JFrame {
             variables.add(m.group(1));
         }
         p.variables = variables.size();
+        try {
+            p.motivoSimplexDual = com.mycompany.problema.programacion.lineal.algoritmos.CondicionesSimplexDual
+                    .motivoNoAplica(fo, restricciones, ZType.getSelectedIndex() == 1);
+        } catch (IllegalArgumentException ex) {
+            p.motivoSimplexDual = null; // a medio escribir: lo dirá Calcular
+        }
         p.restricciones = restricciones.length;
         p.variablesNumerico = p.variables;
         for (String r : restricciones) {
@@ -1825,26 +1829,26 @@ public class PrincipalPage extends javax.swing.JFrame {
      * factibilidad, etc.)
      */
     private boolean checkDualSimplex(String[] restricciones, String FO, int metodo) {
+    if (metodo != 0) {
+        return pair(metodo, FO, restricciones);
+    }
+    // Decide por mí lo elige, como siempre, cuando hay un lado derecho escrito en negativo
+    // (así un Min con >= sigue yendo al Gráfico o a Big M), pero ahora además exige las dos
+    // condiciones de la teoría (∃ VR < 0 y Pj óptimos): antes podía elegirlo y fallar al calcular
     boolean hayNegativo = false;
     for (String r : restricciones) {
-        String[] partes = parseRestriction(r); // [lhs, op, rhs]
-        String rhs = partes[2];
         try {
-            double val = Double.parseDouble(rhs);
-            if (val < 0) {
-                hayNegativo = true;
-                break;
-            }
+            hayNegativo |= Double.parseDouble(parseRestriction(r)[2]) < 0;
         } catch (NumberFormatException ex) {
             // ignorar no numéricos
         }
     }
-
-    if (metodo != 0) {
-        return pair(metodo, FO, restricciones);
+    try {
+        return hayNegativo && com.mycompany.problema.programacion.lineal.algoritmos.CondicionesSimplexDual
+                .motivoNoAplica(FO, restricciones, ZType.getSelectedIndex() == 1) == null;
+    } catch (IllegalArgumentException ex) {
+        return false;
     }
-
-    return hayNegativo; // heurístico: si hay RHS < 0 → sugerir Dual Simplex
 }
 
 

@@ -24,7 +24,7 @@ También puedes buscar el instalador o el `.zip` de cualquier versión anterior 
 
 La versión actual es **2.1.0**: trae el **Simplex Revisado** (el mismo tablero del Simplex, pero cada bloque calculado con B⁻¹: Tablero = B⁻¹·[A | I | R]), el **análisis de sensibilidad** (precios sombra, holguras y rangos, con el botón *Sensibilidad* del Simplex y del Simplex Revisado) y el **modo oscuro**.
 
-En prueba, la **2.2.0.1 (experimental)** trae la **dualidad**: la Z de la función objetivo tiene un superíndice **P / D** y un subíndice **Max / Min** que se cambian con un clic. Con la **P** pasada a **D**, el problema escrito se convierte en su dual (escrito con variables `y`) y las ayudas **(?)** muestran la teoría del problema dual. Ver [Problema dual](#problema-dual). No reemplaza a la 2.1.0 como versión estable.
+En prueba, la **2.2.0.2 (experimental)** trae la **dualidad**: la Z de la función objetivo tiene un superíndice **P / D** y un subíndice **Max / Min** que se cambian con un clic. Con la **P** pasada a **D**, el problema escrito se convierte en su dual (escrito con variables `y`) y las ayudas **(?)** muestran la teoría del problema dual. Ver [Problema dual](#problema-dual). Además, el Simplex Dual se ofrece solo cuando cumple sus dos condiciones (∃ VR < 0 y tablero óptimo) y, si no, el selector dice cuál falta. No reemplaza a la 2.1.0 como versión estable.
 
 La **2.0.2** permitió llamar a las variables como quieras: puedes llamar a las variables como quieras (`x10` y `x20`, `x3` y `x15`, `x11`...`x23`, o 10 o más variables) y Simplex, Big M, Simplex Dual, Gráfico y Numérico las resuelven mostrando tus nombres. El selector de algoritmos ahora decide qué métodos ofrecer según la estructura del problema y explica por qué un método no aplica. Ver [Formato de entrada](#formato-de-entrada).
 
@@ -62,7 +62,7 @@ El historial completo de cambios, versión por versión, está en las [Releases]
 | Simplex | Problemas lineales en forma estándar; es el método general. |
 | Simplex Revisado | Los mismos problemas que el Simplex: el tablero se arma con matrices (B⁻¹A, B⁻¹, B⁻¹R y Cbᵀ·B⁻¹) en vez de pivotearlo. |
 | Big M | Restricciones `>=` o `=` que requieren variables artificiales. |
-| Simplex Dual | Casos con restricciones `<=` y términos independientes negativos. |
+| Simplex Dual | Problemas cuyo tablero inicial ya es óptimo (Zmax: todos los Pj ≤ 0; Zmin: todos ≥ 0) pero no factible (∃ VR < 0: algún lado derecho negativo, o `>=` multiplicadas por −1). Típico: minimizar con costos positivos y restricciones `>=`. |
 | Numérico | Enumeración de soluciones básicas o puntos extremos. |
 | Húngaro | Problemas de asignación con matriz de costos cuadrada. |
 | Costos Duales (MODI) | Problemas de transporte; usa Vogel para la solución inicial y MODI para optimizarla. |

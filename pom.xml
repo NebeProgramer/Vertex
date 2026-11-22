@@ -148,7 +148,7 @@
                         <configuration>
                             <name>Vertex</name>
                             <appVersion>${project.version}</appVersion>
-                            <vendor>Anderson</vendor>
+                            <vendor>ND Studios</vendor>
                             <!-- Carpeta donde queda el instalador generado -->
                             <destination>${project.build.directory}/installer</destination>
                             <!-- Carpeta que contiene el jar a empaquetar (target/, donde el shade-plugin deja Vertex.jar) -->
