@@ -262,35 +262,44 @@ public class MetodoSimplexRevisado extends javax.swing.JFrame implements MetodoP
         int m = R.length;
         A = new double[m][numVars];
         b = new double[m];
+        String[] operadores = new String[m];
         for (int i = 0; i < m; i++) {
             String[] partes = PrincipalPage.parseRestriction(R[i]);
-            if (!"<=".equals(partes[1])) {
-                throw new IllegalArgumentException(
-                        "El Simplex Revisado (como el Simplex) solo admite restricciones de tipo <=.\n"
-                        + "La restricción " + (i + 1) + " (\"" + R[i] + "\") usa '" + partes[1] + "'.\n"
-                        + "Prueba con Big M o Simplex Dual para este caso.");
-            }
+            operadores[i] = partes[1];
             b[i] = parseNum(partes[2]);
-            if (b[i] < 0) {
-                throw new IllegalArgumentException(
-                        "La restricción " + (i + 1) + " tiene término independiente negativo.\n"
-                        + "Prueba con Simplex Dual para este caso.");
-            }
             Map<Integer, String> coefs = PrincipalPage.parseCoefficientsMap(partes[0]);
             for (int k = 0; k < numVars; k++) {
                 A[i][k] = parseNum(coefs.getOrDefault(ordered.get(k), "0"));
             }
         }
 
-        nombres = new String[numVars + m];
+        int extra = 0;
+        for (String operador : operadores) {
+            if ("<=".equals(operador)) {
+                extra++;
+            } else if (">=".equals(operador)) {
+                extra += 2;
+            } else if ("=".equals(operador)) {
+                extra++;
+            }
+        }
+        nombres = new String[numVars + extra];
         for (int k = 0; k < numVars; k++) {
             nombres[k] = mapeo.nombreDe(ordered.get(k));
         }
+        int siguiente = numVars;
         for (int i = 0; i < m; i++) {
-            nombres[numVars + i] = "s" + (i + 1);
+            if ("<=".equals(operadores[i])) {
+                nombres[siguiente++] = "s" + (i + 1);
+            } else if (">=".equals(operadores[i])) {
+                nombres[siguiente++] = "s" + (i + 1);
+                nombres[siguiente++] = "A" + (i + 1);
+            } else {
+                nombres[siguiente++] = "A" + (i + 1);
+            }
         }
 
-        resultado = SimplexRevisado.resolver(c, A, b, esMin);
+        resultado = SimplexRevisado.resolver(c, A, b, operadores, esMin);
 
         // B⁻¹·[A | I | R] de cada iteración
         cuerpos.clear();
@@ -309,7 +318,9 @@ public class MetodoSimplexRevisado extends javax.swing.JFrame implements MetodoP
         }
 
         StringBuilder sb = new StringBuilder();
-        if (resultado.noAcotado) {
+        if (resultado.infactible) {
+            sb.append("El problema no tiene solución factible: una variable artificial quedó positiva al terminar la fase I.");
+        } else if (resultado.noAcotado) {
             sb.append("El problema no tiene solución acotada (unbounded): la variable que entra puede crecer sin límite.");
         } else {
             sb.append("Solución óptima: \n");

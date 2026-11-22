@@ -27,6 +27,8 @@ import com.mycompany.problema.programacion.lineal.algoritmos.MetodoPL;
  */
 public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
 
+    private static final double EPS = 1e-9;
+
     private static final Color COLOR_LINEA = new Color(255, 255, 170);   // amarillo: fila/columna cubierta por una línea
     private static final Color COLOR_ASIGNADO = new Color(180, 255, 180); // verde: celda con valor 0
     private static final Color COLOR_CAUSANTE = new Color(255, 176, 120); // naranja: número que se resta/suma esta iteración
@@ -346,7 +348,7 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
             while (!pendientes.isEmpty()) {
                 int i = pendientes.pop();
                 for (int j = 0; j < n; j++) {
-                    if (Zmat[i][j] == 0 && !colMarcada[j]) {
+                    if (Math.abs(Zmat[i][j]) <= EPS && !colMarcada[j]) {
                         colMarcada[j] = true;
                         int filaAsociada = matchCol[j];
                         if (filaAsociada != -1 && !filaMarcada[filaAsociada]) {
@@ -367,7 +369,7 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
                     boolean cubierta = filaCubierta[i] || colCubierta[j];
-                    aux[i][j] = (Zmat[i][j] == 0) ? 2 : (cubierta ? 1 : 0);
+                    aux[i][j] = (Math.abs(Zmat[i][j]) <= EPS) ? 2 : (cubierta ? 1 : 0);
                 }
             }
 
@@ -406,7 +408,7 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
                     } else if (filaCubierta[i] && colCubierta[j]) {
                         Zmat[i][j] += menorNoCubierto;
                     }
-                    if (Zmat[i][j] == 0) {
+                    if (Math.abs(Zmat[i][j]) <= EPS) {
                         auxAjuste[i][j] = 2; // cero nuevo tras la resta/suma (verde)
                     }
                 }
@@ -427,7 +429,7 @@ public class AlgoritmoHungaro extends javax.swing.JFrame implements MetodoPL {
     private boolean intentarAsignar(int fila, double[][] Zmat, boolean[] colVisitada, int[] matchCol, int[] matchRow) {
         int n = Zmat[0].length;
         for (int j = 0; j < n; j++) {
-            if (Zmat[fila][j] == 0 && !colVisitada[j]) {
+            if (Math.abs(Zmat[fila][j]) <= EPS && !colVisitada[j]) {
                 colVisitada[j] = true;
                 if (matchCol[j] == -1 || intentarAsignar(matchCol[j], Zmat, colVisitada, matchCol, matchRow)) {
                     matchCol[j] = fila;

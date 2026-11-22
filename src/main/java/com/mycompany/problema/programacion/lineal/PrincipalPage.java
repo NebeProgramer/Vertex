@@ -25,6 +25,8 @@ public class PrincipalPage extends javax.swing.JFrame {
             = new com.mycompany.problema.programacion.lineal.algoritmos.Json_History();
     /** Nombre del algoritmo que efectivamente se resolvió en el último "Calcular" (para el historial). */
     private String ultimoMetodoResuelto;
+    private java.util.Set<Integer> variablesEnteras = new java.util.HashSet<>();
+    private java.util.Set<Integer> variablesBinarias = new java.util.HashSet<>();
     private MenuHistorial menuHistorial;
     private SeleccionMultiAlgoritmo seleccionMulti;
 
@@ -1193,6 +1195,20 @@ public class PrincipalPage extends javax.swing.JFrame {
             // En el dual el usuario escribe y1, y2...: los algoritmos reciben x1, x2... y
             // las ventanas vuelven a mostrar y (planoPara). El historial guarda lo escrito.
             String[] lineas = Restrictions.getText().split("\\r?\\n");
+            java.util.List<String> restriccionesReales = new java.util.ArrayList<>();
+            variablesEnteras.clear();
+            variablesBinarias.clear();
+            for (String linea : lineas) {
+                String limpia = linea.replaceAll("\\s+", "");
+                if (limpia.toLowerCase().startsWith("enteras:")) {
+                    variablesEnteras.addAll(extraerIndices(limpia.substring(limpia.indexOf(':') + 1)));
+                } else if (limpia.toLowerCase().startsWith("binarias:")) {
+                    variablesBinarias.addAll(extraerIndices(limpia.substring(limpia.indexOf(':') + 1)));
+                } else if (!limpia.isEmpty()) {
+                    restriccionesReales.add(linea);
+                }
+            }
+            lineas = restriccionesReales.toArray(new String[0]);
             verificarLetra(ObjetiveFunction.getText(), lineas);
             for (int i = 0; i < lineas.length; i++) {
                 lineas[i] = aX(lineas[i]);
@@ -1220,6 +1236,12 @@ public class PrincipalPage extends javax.swing.JFrame {
             System.out.println("Matriz de restricciones:");
             for (String[] fila : RMat) {
                 System.out.println(Arrays.toString(fila));
+            }
+            if (!variablesEnteras.isEmpty() || !variablesBinarias.isEmpty()) {
+                resolverEntero(FO, RMat, tipo);
+                ultimoMetodoResuelto = "Programación Entera";
+                historial.guardarCalculo(deX(FO), deX(R), tipo, new String[]{ultimoMetodoResuelto}, modo);
+                return;
             }
 
             //selección de metodo a usar
@@ -1485,6 +1507,103 @@ public class PrincipalPage extends javax.swing.JFrame {
             new PrincipalPage().setVisible(true);
         });
 
+    }
+
+    private void resolverEntero(String fo, String[][] matriz, String tipo) {
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("x(\\d+)", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(fo);
+        java.util.TreeSet<Integer> indices = new java.util.TreeSet<>();
+        while (matcher.find()) {
+            indices.add(Integer.parseInt(matcher.group(1)));
+        }
+        int n = indices.size();
+        if (n == 0) {
+            throw new IllegalArgumentException("No se encontraron variables enteras.");
+        }
+        Integer[] vars = indices.toArray(new Integer[0]);
+        java.util.Map<Integer, String> coefFo = parseCoefficientsMap(fo);
+        double[] c = new double[n];
+        com.mycompany.problema.programacion.lineal.algoritmos.ProgramacionEntera.TipoVariable[] tipos =
+                new com.mycompany.problema.programacion.lineal.algoritmos.ProgramacionEntera.TipoVariable[n];
+        for (int j = 0; j < n; j++) {
+            c[j] = Double.parseDouble(coefFo.getOrDefault(vars[j], "0"));
+            tipos[j] = variablesBinarias.contains(vars[j])
+                    ? com.mycompany.problema.programacion.lineal.algoritmos.ProgramacionEntera.TipoVariable.BINARIA
+                    : variablesEnteras.contains(vars[j])
+                    ? com.mycompany.problema.programacion.lineal.algoritmos.ProgramacionEntera.TipoVariable.ENTERA
+                    : com.mycompany.problema.programacion.lineal.algoritmos.ProgramacionEntera.TipoVariable.CONTINUA;
+        }
+
+        java.util.List<double[]> filasA = new java.util.ArrayList<>();
+        java.util.List<Double> lados = new java.util.ArrayList<>();
+        for (String[] fila : matriz) {
+            double[] a = new double[n];
+            for (int j = 0; j < n; j++) {
+                a[j] = Double.parseDouble(fila[j]);
+            }
+            String op = fila[n];
+            double rhs = Double.parseDouble(fila[n + 1]);
+            if ("=".equals(op)) {
+                filasA.add(a.clone());
+                lados.add(rhs);
+                double[] negada = new double[n];
+                for (int j = 0; j < n; j++) {
+                    negada[j] = -a[j];
+                }
+                filasA.add(negada);
+                lados.add(-rhs);
+            } else if (">=".equals(op)) {
+                double[] negada = new double[n];
+                for (int j = 0; j < n; j++) {
+                    negada[j] = -a[j];
+                }
+                filasA.add(negada);
+                lados.add(-rhs);
+            } else {
+                if (rhs < 0) {
+                    for (int j = 0; j < n; j++) {
+                        a[j] = -a[j];
+                    }
+                    rhs = -rhs;
+                }
+                filasA.add(a);
+                lados.add(rhs);
+            }
+        }
+        double[][] a = filasA.toArray(new double[0][]);
+        double[] b = lados.stream().mapToDouble(Double::doubleValue).toArray();
+        com.mycompany.problema.programacion.lineal.algoritmos.ProgramacionEntera.Resultado r =
+                com.mycompany.problema.programacion.lineal.algoritmos.ProgramacionEntera.resolver(c, a, b,
+                "Min".equalsIgnoreCase(tipo), tipos);
+        if (!r.factible) {
+            throw new IllegalArgumentException("El problema entero no tiene solución factible.");
+        }
+
+        StringBuilder sb = new StringBuilder("Solución entera óptima:\n");
+        for (int j = 0; j < n; j++) {
+            sb.append(mapeoNombreVariable(vars[j])).append(" = ")
+                    .append(com.mycompany.problema.programacion.lineal.algoritmos.FormatoNumero.fmt(r.solucion[j]))
+                    .append("\n");
+        }
+        sb.append("Z = ").append(com.mycompany.problema.programacion.lineal.algoritmos.FormatoNumero.fmt(r.z));
+        if (r.multiples) {
+            sb.append("\nSoluciones óptimas múltiples: ").append(r.solucionesOptimas.size());
+        }
+        javax.swing.JOptionPane.showMessageDialog(this, sb.toString(), "Programación Entera",
+                javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private String mapeoNombreVariable(int indice) {
+        return Dualidad.esDual() ? "y" + indice : "x" + indice;
+    }
+
+    private static java.util.Set<Integer> extraerIndices(String texto) {
+        java.util.Set<Integer> indices = new java.util.TreeSet<>();
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(\\d+)").matcher(texto);
+        while (matcher.find()) {
+            indices.add(Integer.parseInt(matcher.group(1)));
+        }
+        return indices;
     }
 
     public static String[][] validateAndBuild(String FO, String[] R) {

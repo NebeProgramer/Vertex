@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.mycompany.problema.programacion.lineal.algoritmos.AnalisisSensibilidad;
 import com.mycompany.problema.programacion.lineal.algoritmos.MetodoPL;
 import com.mycompany.problema.programacion.lineal.parser.ParserLP;
 
@@ -47,6 +48,11 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
     private String resultadoTexto;
     /** Coeficientes de Z tal como los escribió el usuario (fila Cj del tablero). */
     private double[] cUsuario;
+    private double[] sensC;
+    private double[][] sensA;
+    private double[] sensB;
+    private boolean[] sensNegada;
+    private int[] sensBase;
 
     
     /** Nombres a mostrar (xij originales); identidad = "x" + k, como siempre. */
@@ -75,6 +81,8 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
         Recursos.instalarAyudaEnBarraTitulo(this, "Big M",
                 "<html><b>Colorimetría — Big M</b><br>&#128992; Naranja: celda pivote<br>&#128993; Amarillo: fila y columna del pivote<br>&#128994; Verde: números afectados por el cambio de variable</html>",
                 Dualidad.teoria(VentanaAyudaAlgoritmo.TEORIA_BIGM, VentanaAyudaAlgoritmo.TEORIA_BIGM_DUAL));
+        Recursos.agregarBotonBarraTitulo(this, "Sensibilidad",
+                "Precios sombra, holguras y rangos de la solución óptima", this::mostrarSensibilidad);
         Recursos.envolverEnFondoAzul(this);
         Recursos.modernizarVentana(this);
         // el texto del paso puede ser largo: que se recorte (completo en el tooltip) antes que empujar los botones
@@ -236,6 +244,9 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
         double[][] A = new double[m][numVars];
         double[] b = new double[m];
         String[] ops = new String[m];
+        boolean[] negada = new boolean[m];
+        double[][] aOriginal = new double[m][numVars];
+        double[] bOriginal = new double[m];
 
         for (int i = 0; i < m; i++) {
             String[] partes = PrincipalPage.parseRestriction(R[i]);
@@ -246,6 +257,9 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
             }
             String op = partes[1];
             double rhsVal = parseNum(partes[2]);
+            System.arraycopy(fila, 0, aOriginal[i], 0, numVars);
+            bOriginal[i] = rhsVal;
+            negada[i] = ">=".equals(op);
 
             if (rhsVal < 0) {
                 for (int k = 0; k < numVars; k++) {
@@ -418,6 +432,45 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
 
         double zRowConst = zc[totalCols - 1];
         zOptimo = esMin ? -zRowConst : zRowConst;
+
+        if (factible) {
+            sensC = c;
+            sensA = new double[m][numVars];
+            sensB = b.clone();
+            sensNegada = negada.clone();
+            sensBase = new int[m];
+            boolean puedeAnalizar = true;
+            for (int i = 0; i < m; i++) {
+                if ("=".equals(ops[i])) {
+                    puedeAnalizar = false;
+                }
+                for (int k = 0; k < numVars; k++) {
+                    sensA[i][k] = negada[i] ? -aOriginal[i][k] : aOriginal[i][k];
+                }
+                if (negada[i]) {
+                    sensB[i] = -bOriginal[i];
+                } else {
+                    sensB[i] = bOriginal[i];
+                }
+                int col = basis[i];
+                if (col < numVars) {
+                    sensBase[i] = col;
+                } else if (col < totalVars) {
+                    sensBase[i] = numVars + i;
+                } else {
+                    puedeAnalizar = false;
+                }
+            }
+            if (!puedeAnalizar) {
+                sensBase = null;
+            }
+        } else {
+            sensC = null;
+            sensA = null;
+            sensB = null;
+            sensNegada = null;
+            sensBase = null;
+        }
 
         StringBuilder sb = new StringBuilder();
         if (!factible) {
@@ -634,6 +687,25 @@ public class MetodoBigM extends javax.swing.JFrame implements MetodoPL {
             sb.append("Óptimo: ").append(esOptimo ? "Sí" : Recursos.motivoNoOptimo(esMin));
         }
         return sb.toString();
+    }
+
+    private void mostrarSensibilidad() {
+        if (sensBase == null) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    factible
+                            ? "La sensibilidad todavía no está disponible para restricciones de igualdad."
+                            : "No hay una solución óptima factible que analizar.",
+                    "Sensibilidad", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        AnalisisSensibilidad s = AnalisisSensibilidad.calcular(
+                sensC, sensA, sensB, esMin, sensBase, sensNegada);
+        String[] restricciones = new String[sensB.length];
+        for (int i = 0; i < restricciones.length; i++) {
+            restricciones[i] = "R" + (i + 1);
+        }
+        new VentanaSensibilidad(this, "Big M", s,
+                java.util.Arrays.copyOf(varNames, numVars), restricciones).setVisible(true);
     }
 
     private double parseNum(String s) {

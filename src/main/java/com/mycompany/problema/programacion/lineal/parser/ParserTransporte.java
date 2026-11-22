@@ -20,7 +20,7 @@ import com.mycompany.problema.programacion.lineal.PrincipalPage;
  */
 public final class ParserTransporte {
 
-    private static final Pattern TERMINO = Pattern.compile("([+-]?\\d*\\.?\\d*)x(\\d+)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern TERMINO = Pattern.compile("([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)?)x(\\d+)", Pattern.CASE_INSENSITIVE);
 
     private ParserTransporte() {
     }
@@ -37,26 +37,27 @@ public final class ParserTransporte {
         Matcher m = TERMINO.matcher(limpio);
 
         int maxI = 0, maxJ = 0;
-        List<int[]> terminos = new ArrayList<>(); // [coef, i, j]
+        List<double[]> terminos = new ArrayList<>(); // [coef, i, j]
 
         while (m.find()) {
             String coefStr = m.group(1);
-            int coef = coefStr.isEmpty() || coefStr.equals("+") ? 1
-                    : coefStr.equals("-") ? -1 : Integer.parseInt(coefStr);
+            double coef = coefStr.isEmpty() || coefStr.equals("+") || coefStr.equals("+x") ? 1
+                    : coefStr.equals("-") || coefStr.equals("-x") ? -1
+                    : Double.parseDouble(coefStr);
 
             String digitos = m.group(2);
             int mitad = digitos.length() / 2;
             int i = Integer.parseInt(digitos.substring(0, mitad));
             int j = Integer.parseInt(digitos.substring(mitad));
 
-            terminos.add(new int[]{coef, i, j});
+            terminos.add(new double[]{coef, i, j});
             maxI = Math.max(maxI, i);
             maxJ = Math.max(maxJ, j);
         }
 
         double[][] Zmat = new double[maxI][maxJ];
-        for (int[] t : terminos) {
-            Zmat[t[1] - 1][t[2] - 1] = t[0];
+        for (double[] t : terminos) {
+            Zmat[(int) t[1] - 1][(int) t[2] - 1] = t[0];
         }
         return Zmat;
     }

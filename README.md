@@ -22,9 +22,7 @@ También puedes buscar el instalador o el `.zip` de cualquier versión anterior 
 
 ## Novedades
 
-La versión actual es **2.1.0**: trae el **Simplex Revisado** (el mismo tablero del Simplex, pero cada bloque calculado con B⁻¹: Tablero = B⁻¹·[A | I | R]), el **análisis de sensibilidad** (precios sombra, holguras y rangos, con el botón *Sensibilidad* del Simplex y del Simplex Revisado) y el **modo oscuro**.
-
-En prueba, la **2.2.0.2 (experimental)** trae la **dualidad**: la Z de la función objetivo tiene un superíndice **P / D** y un subíndice **Max / Min** que se cambian con un clic. Con la **P** pasada a **D**, el problema escrito se convierte en su dual (escrito con variables `y`) y las ayudas **(?)** muestran la teoría del problema dual. Ver [Problema dual](#problema-dual). Además, el Simplex Dual se ofrece solo cuando cumple sus dos condiciones (∃ VR < 0 y tablero óptimo) y, si no, el selector dice cuál falta. No reemplaza a la 2.1.0 como versión estable.
+La versión actual es **2.2.0**: incluye la **dualidad** estable, Simplex Dual con sus condiciones exactas, costos decimales en asignación y transporte, Simplex Revisado con `<=`, `>=` e `=`, programación entera con variables enteras y binarias, nombres reales de variables y mensajes claros para solución no acotada, infactible, degenerada o con óptimos múltiples.
 
 La **2.0.2** permitió llamar a las variables como quieras: puedes llamar a las variables como quieras (`x10` y `x20`, `x3` y `x15`, `x11`...`x23`, o 10 o más variables) y Simplex, Big M, Simplex Dual, Gráfico y Numérico las resuelven mostrando tus nombres. El selector de algoritmos ahora decide qué métodos ofrecer según la estructura del problema y explica por qué un método no aplica. Ver [Formato de entrada](#formato-de-entrada).
 
@@ -35,7 +33,7 @@ El historial completo de cambios, versión por versión, está en las [Releases]
 ## Funcionalidades
 
 - Optimización de problemas de **maximización** y **minimización**.
-- **Problema dual (experimental):** un clic en el superíndice de Z (Z<sup>P</sup> ⇄ Z<sup>D</sup>) arma el dual del problema escrito y lo resuelve con cualquier método cuyas condiciones cumpla.
+- **Problema dual:** un clic en el superíndice de Z (Z<sup>P</sup> ⇄ Z<sup>D</sup>) arma el dual del problema escrito y lo resuelve con cualquier método cuyas condiciones cumpla.
 - **Texto libre con IA local (opcional):** escribe el enunciado en palabras y Vertex arma el modelo por ti.
 - Botón **Limpiar** en el Editor y en Texto libre.
 - Validación de la sintaxis de las expresiones y de las restricciones.

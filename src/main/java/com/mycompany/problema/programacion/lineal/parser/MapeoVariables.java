@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,7 +51,11 @@ public final class MapeoVariables {
     /** Nombre que ve el usuario para la variable plana xk (k desde 1). */
     public String nombreDe(int k) {
         if (k >= 1 && k <= nombresOriginales.size()) {
-            return letra + nombresOriginales.get(k - 1).substring(1);
+            String original = nombresOriginales.get(k - 1);
+            if (original.startsWith("x") || original.startsWith("y")) {
+                return letra + original.substring(1);
+            }
+            return original;
         }
         return letra + "" + k;
     }
@@ -169,6 +174,42 @@ public final class MapeoVariables {
             rPlano[i] = reescribir(R[i], reemplazo);
         }
         return new Traduccion(foPlano, rPlano, new MapeoVariables(originales));
+    }
+
+    /**
+     * Traduce nombres reales como "mesas" y "sillas" a x1..xn y conserva
+     * las etiquetas para mostrarlas en las ventanas de resultados.
+     */
+    public static Traduccion compactarNombres(String FO, String[] R, List<String> nombres) {
+        if (nombres == null || nombres.isEmpty()) {
+            return new Traduccion(FO, R, IDENTIDAD);
+        }
+        Map<String, String> reemplazo = new LinkedHashMap<>();
+        List<String> originales = new ArrayList<>();
+        for (int i = 0; i < nombres.size(); i++) {
+            String nombre = nombres.get(i).trim();
+            if (!nombre.isEmpty() && nombre.matches("[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9_]*")) {
+                reemplazo.put(nombre, "x" + (i + 1));
+                originales.add(nombre);
+            }
+        }
+        if (reemplazo.isEmpty()) {
+            return new Traduccion(FO, R, IDENTIDAD);
+        }
+        String foPlano = reescribirNombres(FO, reemplazo);
+        String[] rPlano = new String[R.length];
+        for (int i = 0; i < R.length; i++) {
+            rPlano[i] = reescribirNombres(R[i], reemplazo);
+        }
+        return new Traduccion(foPlano, rPlano, new MapeoVariables(originales));
+    }
+
+    private static String reescribirNombres(String texto, Map<String, String> reemplazo) {
+        String actual = texto;
+        for (Map.Entry<String, String> entry : reemplazo.entrySet()) {
+            actual = actual.replace(entry.getKey(), entry.getValue());
+        }
+        return actual;
     }
 
     /** true si los índices son exactamente 1..n, escritos sin ceros a la izquierda. */

@@ -64,18 +64,20 @@ public final class SimplexRevisado {
         public final double z;
         public final int[] baseFinal;
         public final boolean noAcotado;
+        public final boolean infactible;
         /** [A | I]: m filas, n + m columnas (decisión y holguras). */
         public final double[][] aEstandar;
         /** Costos internos (maximización): c, o −c si el problema es Min; holguras con 0. */
         public final double[] cInterno;
 
         Resultado(List<Iteracion> iteraciones, double[] solucion, double z, int[] baseFinal,
-                boolean noAcotado, double[][] aEstandar, double[] cInterno) {
+                boolean noAcotado, boolean infactible, double[][] aEstandar, double[] cInterno) {
             this.iteraciones = Collections.unmodifiableList(iteraciones);
             this.solucion = solucion;
             this.z = z;
             this.baseFinal = baseFinal;
             this.noAcotado = noAcotado;
+            this.infactible = infactible;
             this.aEstandar = aEstandar;
             this.cInterno = cInterno;
         }
@@ -130,11 +132,160 @@ public final class SimplexRevisado {
                 solucion[ultima.base[i]] = ultima.xB[i];
             }
         }
-        return new Resultado(iteraciones, solucion, ultima.z, ultima.base.clone(), noAcotado, a, cI);
+        return new Resultado(iteraciones, solucion, ultima.z, ultima.base.clone(), noAcotado, false, a, cI);
+    }
+
+    /**
+     * Versión revisada para restricciones <=, >= e =. Usa fase I con
+     * variables artificiales y después resuelve el objetivo original.
+     */
+    public static Resultado resolver(double[] c, double[][] A, double[] b, String[] operadores,
+            boolean esMin) {
+        int m = b.length;
+        int n = c.length;
+        if (m == 0 || operadores == null || operadores.length != m) {
+            throw new IllegalArgumentException("Las restricciones y sus operadores deben tener la misma cantidad.");
+        }
+
+        double[][] aa = new double[m][n];
+        double[] bb = b.clone();
+        String[] op = operadores.clone();
+        for (int i = 0; i < m; i++) {
+            System.arraycopy(A[i], 0, aa[i], 0, n);
+            if (bb[i] < -EPS) {
+                bb[i] = -bb[i];
+                for (int j = 0; j < n; j++) {
+                    aa[i][j] = -aa[i][j];
+                }
+                if ("<= ".trim().equals(op[i].trim())) {
+                    op[i] = ">=";
+                } else if (">=".equals(op[i].trim())) {
+                    op[i] = "<=";
+                }
+            }
+        }
+
+        int colsExtra = 0;
+        for (int i = 0; i < m; i++) {
+            String operador = op[i].trim();
+            if ("<= ".trim().equals(operador)) {
+                colsExtra++;
+            } else if (">=".equals(operador)) {
+                colsExtra += 2;
+            } else if ("=".equals(operador)) {
+                colsExtra++;
+            } else {
+                throw new IllegalArgumentException("Operador no reconocido: " + operador);
+            }
+        }
+
+        int total = n + colsExtra;
+        double[][] a = new double[m][total];
+        int[] artificial = new int[m];
+        java.util.Arrays.fill(artificial, -1);
+        int baseExtra = n;
+        int[] base = new int[m];
+        for (int i = 0; i < m; i++) {
+            System.arraycopy(aa[i], 0, a[i], 0, n);
+            String operador = op[i].trim();
+            if ("<= ".trim().equals(operador)) {
+                int slack = baseExtra++;
+                a[i][slack] = 1.0;
+                base[i] = slack;
+            } else if (">=".equals(operador)) {
+                int excess = baseExtra++;
+                a[i][excess] = -1.0;
+                int art = baseExtra++;
+                a[i][art] = 1.0;
+                artificial[i] = art;
+                base[i] = art;
+            } else {
+                int art = baseExtra++;
+                a[i][art] = 1.0;
+                artificial[i] = art;
+                base[i] = art;
+            }
+        }
+
+        boolean[] puedeEntrar = new boolean[total];
+        for (int j = 0; j < total; j++) {
+            puedeEntrar[j] = true;
+        }
+        for (int art : artificial) {
+            if (art >= 0) {
+                puedeEntrar[art] = false;
+            }
+        }
+
+        List<Iteracion> iteraciones = new ArrayList<>();
+        double[] faseI = new double[total];
+        for (int art : artificial) {
+            if (art >= 0) {
+                faseI[art] = -1.0;
+            }
+        }
+        boolean noAcotado = false;
+        for (int k = 0; k < ITERACIONES_MAX; k++) {
+            Iteracion it = calcularIteracion(a, bb, faseI, base, false, puedeEntrar);
+            iteraciones.add(it);
+            if (it.optima) {
+                break;
+            }
+            if (it.noAcotado) {
+                noAcotado = true;
+                break;
+            }
+            base = base.clone();
+            base[it.filaSale] = it.entra;
+        }
+
+        Iteracion faseFinal = iteraciones.get(iteraciones.size() - 1);
+        boolean infactible = false;
+        for (int i = 0; i < m; i++) {
+            if (artificial[i] >= 0 && base[i] == artificial[i]
+                    && faseFinal.xB[i] > EPS) {
+                infactible = true;
+            }
+        }
+        if (infactible) {
+            return new Resultado(iteraciones, new double[n], 0, base.clone(), false, true, a, faseI);
+        }
+
+        double[] cI = new double[total];
+        for (int j = 0; j < n; j++) {
+            cI[j] = esMin ? -c[j] : c[j];
+        }
+        for (int k = 0; k < ITERACIONES_MAX; k++) {
+            Iteracion it = calcularIteracion(a, bb, cI, base, esMin);
+            iteraciones.add(it);
+            if (it.optima) {
+                break;
+            }
+            if (it.noAcotado) {
+                noAcotado = true;
+                break;
+            }
+            base = base.clone();
+            base[it.filaSale] = it.entra;
+        }
+
+        Iteracion ultima = iteraciones.get(iteraciones.size() - 1);
+        double[] solucion = new double[n];
+        for (int i = 0; i < m; i++) {
+            if (base[i] < n) {
+                solucion[base[i]] = ultima.xB[i];
+            }
+        }
+        return new Resultado(iteraciones, solucion, ultima.z, base.clone(), noAcotado, false, a, cI);
     }
 
     /** Todas las matrices de una iteración a partir de la base actual. */
     static Iteracion calcularIteracion(double[][] a, double[] b, double[] cI, int[] base, boolean esMin) {
+        return calcularIteracion(a, b, cI, base, esMin, null);
+    }
+
+    static Iteracion calcularIteracion(double[][] a, double[] b, double[] cI, int[] base, boolean esMin,
+            boolean[] puedeEntrar) {
         int m = b.length;
         int columnas = cI.length;
         Iteracion it = new Iteracion();
@@ -163,6 +314,9 @@ public final class SimplexRevisado {
         double mejor = EPS;
         for (int j = 0; j < columnas; j++) {
             if (esBasica[j]) {
+                continue;
+            }
+            if (puedeEntrar != null && !puedeEntrar[j]) {
                 continue;
             }
             it.costosReducidos[j] = cI[j] - Matrices.punto(it.pi, Matrices.columna(a, j));

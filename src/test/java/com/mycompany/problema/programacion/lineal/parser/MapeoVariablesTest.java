@@ -117,6 +117,18 @@ class MapeoVariablesTest {
         assertEquals(MapeoVariables.traducirDobleIndice(fo, rs).getFOPlano(), MapeoVariables.compactar(fo, rs).getFOPlano());
     }
 
+    @Test
+    void compactarNombresReales() {
+        MapeoVariables.Traduccion t = MapeoVariables.compactarNombres(
+                "40mesas+30sillas",
+                new String[]{"2mesas+sillas<=40", "mesas+sillas<=30"},
+                java.util.List.of("mesas", "sillas"));
+        assertEquals("40x1+30x2", t.getFOPlano());
+        assertArrayEquals(new String[]{"2x1+x2<=40", "x1+x2<=30"}, t.getRPlano());
+        assertEquals("mesas", t.getMapeo().nombreDe(1));
+        assertEquals("sillas", t.getMapeo().nombreDe(2));
+    }
+
     /** Problema dual: los algoritmos reciben x, las ventanas muestran y (con y sin traducción de índices). */
     @Test
     void conLetraY() {
