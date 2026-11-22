@@ -29,6 +29,16 @@ public final class CondicionesSimplexDual {
     private CondicionesSimplexDual() {
     }
 
+    /** Indica si todos los Pj cumplen el signo óptimo del tipo de objetivo. */
+    public static boolean pjCumplenCondicion(double[] pj, boolean esMin) {
+        for (double valor : pj) {
+            if (esMin ? valor < -EPS : valor > EPS) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * @param FO    función objetivo con variables x (ej: "2x1 + 3x2")
      * @param R     restricciones con variables x

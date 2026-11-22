@@ -208,7 +208,8 @@ public final class TableroVista {
             }
             // amarillo: fila que sale y columna que entra; naranja: pivote
             boolean filaPiv = d.filaPivote >= 0 && filaBase == d.filaPivote;
-            boolean colPiv = d.colPivote >= 0 && col == d.colPivote && row <= filaZ + 1;
+            int filaFinalColPiv = d.filaExtra != null ? filaZ + 2 : filaZ + 1;
+            boolean colPiv = d.colPivote >= 0 && col == d.colPivote && row <= filaFinalColPiv;
             if (filaPiv || colPiv) {
                 fondo = AMARILLO;
             }

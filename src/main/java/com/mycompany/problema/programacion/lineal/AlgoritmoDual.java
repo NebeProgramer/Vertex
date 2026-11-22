@@ -580,8 +580,20 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
                 break;
             }
         }
-        boolean esUltimaTabla = idx == tableros.size() - 1;
-        boolean esOptimo = esUltimaTabla && factible;
+        double[] pjPaso = new double[numVars + numSlack];
+        double[] zjPaso = new double[numVars + numSlack];
+        for (int i = 0; i < m; i++) {
+            double cb = basis[i] < numVars ? cUsuario[basis[i]] : 0.0;
+            for (int j = 0; j < pjPaso.length; j++) {
+                zjPaso[j] += cb * T[i][j];
+            }
+        }
+        for (int j = 0; j < pjPaso.length; j++) {
+            double cj = j < numVars ? cUsuario[j] : 0.0;
+            pjPaso[j] = cj - zjPaso[j];
+        }
+        boolean pjOptimos = com.mycompany.problema.programacion.lineal.algoritmos.CondicionesSimplexDual
+                .pjCumplenCondicion(pjPaso, esMin);
 
         StringBuilder sb = new StringBuilder();
         sb.append("Tablero ").append(idx + 1).append(" de ").append(tableros.size()).append(":\n");
@@ -589,14 +601,10 @@ public class AlgoritmoDual extends javax.swing.JFrame implements MetodoPL {
             sb.append(varNames[k]).append(" = ").append(fmt(sol[k])).append("\n");
         }
         sb.append("Z = ").append(fmt(zPaso)).append("\n");
-        // en el Simplex Dual los Pj son óptimos desde el inicio: lo que falta es la factibilidad
         sb.append("Factible: ").append(factiblePaso ? "Sí" : "No — ∃ Sol < 0").append("\n");
-        if (esUltimaTabla && !factible) {
-            sb.append("Óptimo: No — el problema no tiene solución factible");
-        } else {
-            sb.append("Óptimo: ").append(esOptimo ? "Sí"
-                    : "No — los Pj ya cumplen (" + (esMin ? "todos ≥ 0" : "todos ≤ 0") + "), pero ∃ Sol < 0");
-        }
+        sb.append("Óptimo: ").append(pjOptimos
+                ? "Sí — Pj " + (esMin ? "≥ 0" : "≤ 0")
+                : "No — Pj " + (esMin ? "deben ser ≥ 0" : "deben ser ≤ 0"));
         return sb.toString();
     }
 

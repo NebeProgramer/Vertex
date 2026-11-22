@@ -1,6 +1,7 @@
 package com.mycompany.problema.programacion.lineal.algoritmos;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -8,6 +9,14 @@ import org.junit.jupiter.api.Test;
 
 /** Las dos condiciones del Simplex Dual: ∃ VR < 0 en el tablero inicial y Pj óptimos. */
 class CondicionesSimplexDualTest {
+
+    @Test
+    void signoPjDependeDelTipoDeObjetivo() {
+        assertTrue(CondicionesSimplexDual.pjCumplenCondicion(new double[]{2, 3, 0}, true));
+        assertFalse(CondicionesSimplexDual.pjCumplenCondicion(new double[]{2, -1, 0}, true));
+        assertTrue(CondicionesSimplexDual.pjCumplenCondicion(new double[]{-2, -3, 0}, false));
+        assertFalse(CondicionesSimplexDual.pjCumplenCondicion(new double[]{-2, 1, 0}, false));
+    }
 
     /**
      * Max 350y1 + 125y2 − 600y3 (escrito en x) con todo <= y lado derecho positivo:
